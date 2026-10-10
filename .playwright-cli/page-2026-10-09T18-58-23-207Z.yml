@@ -1,0 +1,50 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - link "EmoBridge home" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - img "emobridge" [ref=e6]
+    - navigation "Primary navigation" [ref=e7]:
+      - button "Home" [ref=e8] [cursor=pointer]
+      - link "Journal" [ref=e9] [cursor=pointer]:
+        - /url: /essay
+      - link "Body Sense" [ref=e10] [cursor=pointer]:
+        - /url: /body-sensation
+      - link "Emo Echo" [ref=e11] [cursor=pointer]:
+        - /url: /emo-echo
+      - link "History" [ref=e12] [cursor=pointer]:
+        - /url: /historyreview
+    - generic [ref=e13]:
+      - button "G Guest" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: G
+        - generic [ref=e16]: Guest
+      - link "Login" [ref=e17] [cursor=pointer]:
+        - /url: /login
+  - region [ref=e18]:
+    - generic [ref=e19]:
+      - iframe [ref=e22]:
+        - generic [ref=f1e1]: Drag the color balls together to mix them 🎨
+      - generic [ref=e23]:
+        - heading "Feel your emotion" [level=1] [ref=e24]
+        - paragraph [ref=e25]: Write or speak. EmoBridge turns subtle emotional signals into living type.
+        - button "Start today's entry" [ref=e26] [cursor=pointer]
+    - generic [ref=e27]:
+      - article [ref=e28]:
+        - generic [ref=e29]: Entries
+        - strong [ref=e30]: "0"
+        - generic [ref=e31]: local only
+      - article [ref=e32]:
+        - generic [ref=e33]: Latest label
+        - strong [ref=e34]: Neutral
+        - generic [ref=e35]: waiting for text
+      - article [ref=e36]:
+        - generic [ref=e37]: Mirror intensity
+        - strong [ref=e38]: 80%
+        - generic [ref=e39]: adjustable in journal
+    - region [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - paragraph [ref=e43]: Newest first
+          - heading "Emotion Journal" [level=2] [ref=e44]
+        - button "Clear local entries" [ref=e45] [cursor=pointer]
+      - paragraph [ref=e47]: No entries yet. Start journaling ✏️
+  - text: ● ● ● ● ●

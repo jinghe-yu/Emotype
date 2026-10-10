@@ -1,0 +1,91 @@
+- main [ref=f31e2]:
+  - generic [ref=f31e3]:
+    - link "EmoBridge home" [ref=f31e4] [cursor=pointer]:
+      - /url: /
+      - img "emobridge" [ref=f31e6]
+    - navigation "Primary navigation" [ref=f31e7]:
+      - link "Home" [ref=f31e8] [cursor=pointer]:
+        - /url: /
+      - link "Journal" [ref=f31e9] [cursor=pointer]:
+        - /url: /essay
+      - link "Body Sense" [ref=f31e10] [cursor=pointer]:
+        - /url: /body-sensation
+      - link "Emo Echo" [ref=f31e11] [cursor=pointer]:
+        - /url: /emo-echo
+      - link "History" [ref=f31e12] [cursor=pointer]:
+        - /url: /historyreview
+    - generic [ref=f31e13]:
+      - button "G Guest" [ref=f31e14] [cursor=pointer]:
+        - generic [ref=f31e15]: G
+        - generic [ref=f31e16]: Guest
+      - link "Login" [ref=f31e17] [cursor=pointer]:
+        - /url: /login
+  - region [ref=f31e18]:
+    - generic [ref=f31e19]:
+      - paragraph [ref=f31e20]: Emotion & Body
+      - heading "Body Sense" [level=1] [ref=f31e21]
+      - paragraph [ref=f31e22]: Select body regions and sensations. The system combines them with recent records to generate gentle, non-diagnostic advice.
+    - button "Load recent records" [ref=f31e24] [cursor=pointer]
+  - region "Body Sense workspace" [ref=f31e25]:
+    - complementary [ref=f31e26]:
+      - generic [ref=f31e27]:
+        - generic [ref=f31e28]:
+          - paragraph [ref=f31e29]: Body Map
+          - heading "Body Regions" [level=2] [ref=f31e30]
+        - generic [ref=f31e31]: 0 pairs
+      - img "Body region diagram" [ref=f31e33]
+      - region "Selected pairs" [ref=f31e34]:
+        - generic [ref=f31e36]: None yet
+    - region [ref=f31e37]:
+      - generic [ref=f31e38]:
+        - generic [ref=f31e39]:
+          - generic [ref=f31e40]:
+            - paragraph [ref=f31e41]: Context
+            - heading "Current Record Reference" [level=2] [ref=f31e42]
+          - generic [ref=f31e43]: Loaded 1 records
+        - textbox "Paste today's journal or diary excerpt, or leave blank to generate advice based only on body sensations." [ref=f31e44]
+        - 'button "1. Neutral · QA journal: I am preparing" [ref=f31e46] [cursor=pointer]'
+      - generic [ref=f31e47]:
+        - generic [ref=f31e49]:
+          - paragraph [ref=f31e50]: Region
+          - heading "Select Region" [level=2] [ref=f31e51]
+        - generic [ref=f31e52]:
+          - button "Head" [ref=f31e53] [cursor=pointer]
+          - button "Eyes" [ref=f31e54] [cursor=pointer]
+          - button "Throat / mouth" [ref=f31e55] [cursor=pointer]
+          - button "Chest" [ref=f31e56] [cursor=pointer]
+          - button "Shoulders / neck" [ref=f31e57] [cursor=pointer]
+          - button "Stomach" [ref=f31e58] [cursor=pointer]
+          - button "Lower back" [ref=f31e59] [cursor=pointer]
+          - button "Hands" [ref=f31e60] [cursor=pointer]
+          - button "Legs" [ref=f31e61] [cursor=pointer]
+          - button "Whole body" [ref=f31e62] [cursor=pointer]
+      - generic [ref=f31e63]:
+        - generic [ref=f31e65]:
+          - paragraph [ref=f31e66]: Sensation
+          - heading "Select Sensation" [level=2] [ref=f31e67]
+        - generic [ref=f31e68]:
+          - button "Headache" [ref=f31e69] [cursor=pointer]
+          - button "Dizziness" [ref=f31e70] [cursor=pointer]
+          - button "Brain fog / difficulty focusing" [ref=f31e71] [cursor=pointer]
+          - button "Clear-headed" [ref=f31e72] [cursor=pointer]
+          - button "Focused" [ref=f31e73] [cursor=pointer]
+      - generic [ref=f31e74]:
+        - generic [ref=f31e75]:
+          - generic [ref=f31e76]:
+            - generic [ref=f31e77]: Severity
+            - slider "Severity 3 / 5" [ref=f31e78]: "3"
+            - strong [ref=f31e79]: 3 / 5
+          - generic [ref=f31e80]:
+            - generic [ref=f31e81]: Duration
+            - textbox "Duration" [ref=f31e82]:
+              - /placeholder: e.g., since this afternoon
+        - generic [ref=f31e83]:
+          - generic [ref=f31e84]: Additional notes
+          - textbox "Additional notes" [ref=f31e85]:
+            - /placeholder: e.g., drank little water today, sat for a long time, poor sleep, or more noticeable at certain times.
+        - generic [ref=f31e86]:
+          - button "Add pair" [ref=f31e87] [cursor=pointer]
+          - button "Clear" [ref=f31e88] [cursor=pointer]
+          - button "Generate Body Advice" [ref=f31e89] [cursor=pointer]
+        - paragraph [ref=f31e90]: System combines body sensations with recent records.
