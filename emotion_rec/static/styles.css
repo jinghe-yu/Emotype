@@ -563,7 +563,7 @@ h1, h2, h3 { margin: 0; line-height: 1.1; color: var(--ink); }
   box-shadow: 2px 3px 0 rgba(160,130,80,0.07), 0 1px 6px rgba(0,0,0,0.04);
   padding: clamp(16px, 2.2vw, 26px);
 }
-.mirror-pane { border-color: rgba(59,130,246,0.28); box-shadow: 2px 3px 0 rgba(59,130,246,0.07); }
+.mirror-pane { min-width: 0; border-color: rgba(59,130,246,0.28); box-shadow: 2px 3px 0 rgba(59,130,246,0.07); }
 
 /* Input mode row */
 .input-mode-row {
@@ -666,6 +666,8 @@ textarea:focus {
   align-content: center;
   align-items: center;
   gap: 8px 3px;
+  min-width: 0;
+  max-width: 100%;
   min-height: 38vh;
   border: 1.5px solid rgba(59,130,246,0.2);
   border-radius: 12px;
@@ -674,6 +676,23 @@ textarea:focus {
   background:
     linear-gradient(135deg, rgba(255,255,255,0.92), rgba(219,234,254,0.5)),
     repeating-linear-gradient(0deg, transparent 0 44px, rgba(59,130,246,0.04) 45px);
+}
+.type-word {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.type-break {
+  flex: 0 0 100%;
+  height: 0;
+}
+.type-stage .glyph:not(.emoji) {
+  background: none;
 }
 
 /* Emotion panel */

@@ -466,31 +466,62 @@ function addStyleRange(design, start, length, style, onlyIfEmpty = false) {
   }
 }
 
+function typographyRuns(text) {
+  // Latin words stay intact; CJK characters keep their natural wrap opportunities.
+  // Keep contractions, hyphenated words and trailing punctuation with the word.
+  return String(text).match(/\r\n|[\r\n]|[\p{Script=Latin}\p{M}\p{N}]+(?:['’‐‑-][\p{Script=Latin}\p{M}\p{N}]+)*[.,!?;:%…)\]}’”"']*|./gu) || [];
+}
+
 function renderTypography(text, design = {}, vaMapping = null) {
   typeStage.textContent = "";
   const fragment = document.createDocumentFragment();
   const emojiInsertions = buildEmojiInsertions(text, vaMapping);
+  let glyphIndex = 0;
+  let textOffset = 0;
 
-  [...text || "Start writing to see the mirror."].forEach((char, index) => {
-    const span = document.createElement("span");
-    const style = applyIntensity(design[String(index)] || {});
-    const scale = Number.isFinite(Number(style.scale)) ? Math.max(0.85, Math.min(2.2, Number(style.scale))) : 1;
-    span.className = `glyph ${char === " " ? "space" : ""} ${animationClass(style.animation)}`;
-    span.textContent = char === " " ? "\u00a0" : char;
-    span.style.setProperty("--scale", scale);
-    span.style.setProperty("--glyph-weight", style.weight || 560);
-    span.style.setProperty("--glyph-color", style.color || "var(--ink)");
-    if (style.backgroundColor) {
-      span.style.backgroundColor = hexToRgba(style.backgroundColor, 0.14);
-      span.style.borderRadius = "0.28em";
+  for (const run of typographyRuns(text || "Start writing to see the mirror.")) {
+    if (/^[\r\n]+$/.test(run)) {
+      const lineBreak = document.createElement("span");
+      lineBreak.className = "type-break";
+      lineBreak.textContent = "\n";
+      fragment.appendChild(lineBreak);
+      glyphIndex += [...run].length;
+      textOffset += run.length;
+      continue;
     }
-    fragment.appendChild(span);
 
-    const emojiInsertion = emojiInsertions.get(index);
-    if (emojiInsertion) {
-      fragment.appendChild(createEmojiGlyph(emojiInsertion.emoji, emojiInsertion.mapping));
+    const isWord = /^[\p{Script=Latin}\p{M}\p{N}]/u.test(run);
+    const container = isWord ? document.createElement("span") : fragment;
+    const pendingEmojis = [];
+    if (isWord) container.className = "type-word";
+
+    for (const char of run) {
+      const span = document.createElement("span");
+      const style = applyIntensity(design[String(glyphIndex)] || {});
+      const scale = Number.isFinite(Number(style.scale)) ? Math.max(0.85, Math.min(2.2, Number(style.scale))) : 1;
+      span.className = `glyph ${char === " " ? "space" : ""} ${animationClass(style.animation)}`;
+      span.textContent = char === " " ? "\u00a0" : char;
+      span.style.setProperty("--scale", scale);
+      span.style.setProperty("--glyph-weight", style.weight || 560);
+      span.style.setProperty("--glyph-color", style.color || "var(--ink)");
+      // Deliberately ignore per-letter backgrounds from both local and LLM designs.
+      container.appendChild(span);
+
+      textOffset += char.length;
+      const emojiInsertion = emojiInsertions.get(textOffset - 1);
+      if (emojiInsertion) {
+        if (isWord) pendingEmojis.push(emojiInsertion);
+        else container.appendChild(createEmojiGlyph(emojiInsertion.emoji, emojiInsertion.mapping));
+      }
+      glyphIndex += 1;
     }
-  });
+
+    // A segment can end inside a word; never insert an emoji between its letters.
+    for (const insertion of pendingEmojis) {
+      container.appendChild(createEmojiGlyph(insertion.emoji, insertion.mapping));
+    }
+    if (isWord) fragment.appendChild(container);
+  }
 
   typeStage.appendChild(fragment);
 }
