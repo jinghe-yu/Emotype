@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>登录 | EmoBridge</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20260626a" />
-  <link rel="stylesheet" href="/static/login.css?v=20260607a" />
+  <title data-ui-copy="登录 | EmoBridge">Login | EmoBridge</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20261010c" />
+  <link rel="stylesheet" href="/static/login.css?v=20261010a" />
+<script src="/static/i18n.js?v=20261010c"></script>
 </head>
 <body class="login-page">
 
@@ -24,58 +25,58 @@
 
     <!-- Welcome -->
     <div class="login-welcome" id="welcomeText">
-      <h1>欢迎回来</h1>
-      <p>登录你的 EmoBridge 账户，继续情绪之旅</p>
+      <h1 data-ui-copy="欢迎回来">Welcome back</h1>
+      <p data-ui-copy="登录你的 EmoBridge 账户，继续情绪之旅">Log in to EmoBridge to continue your emotional journey</p>
     </div>
 
     <!-- Mode toggle -->
     <div class="mode-row">
-      <button class="mode-button is-active" id="loginTab" type="button">登录</button>
-      <button class="mode-button" id="registerTab" type="button">注册新账户</button>
+      <button class="mode-button is-active" id="loginTab" type="button" data-ui-copy="登录">Login</button>
+      <button class="mode-button" id="registerTab" type="button" data-ui-copy="注册新账户">Create an account</button>
     </div>
 
     <!-- Login form -->
     <form class="login-form" id="loginForm">
       <label class="participant-code-control">
-        <span>用户名</span>
-        <input type="text" id="loginUsername" placeholder="输入你的用户名" autocomplete="username" required />
+        <span data-ui-copy="用户名">Username</span>
+        <input type="text" id="loginUsername" placeholder="Enter your username" data-ui-placeholder="输入你的用户名" autocomplete="username" required />
       </label>
       <label class="participant-code-control">
-        <span>密码</span>
-        <input type="password" id="loginPassword" placeholder="输入密码" autocomplete="current-password" required />
+        <span data-ui-copy="密码">Password</span>
+        <input type="password" id="loginPassword" placeholder="Enter your password" data-ui-placeholder="输入密码" autocomplete="current-password" required />
       </label>
-      <button class="warm-btn primary" type="submit">登 录</button>
+      <button class="warm-btn primary" type="submit" data-ui-copy="登 录">Log in</button>
     </form>
 
     <!-- Register form (hidden by default) -->
     <form class="login-form" id="registerForm" style="display:none">
       <label class="participant-code-control">
-        <span>用户名</span>
-        <input type="text" id="regUsername" placeholder="2-64位字母、数字、下划线或短横线" autocomplete="username" required />
+        <span data-ui-copy="用户名">Username</span>
+        <input type="text" id="regUsername" placeholder="2–64 letters, numbers, underscores or hyphens" data-ui-placeholder="2-64位字母、数字、下划线或短横线" autocomplete="username" required />
       </label>
       <label class="participant-code-control">
-        <span>密码</span>
-        <input type="password" id="regPassword" placeholder="至少4位" autocomplete="new-password" required />
+        <span data-ui-copy="密码">Password</span>
+        <input type="password" id="regPassword" placeholder="At least 4 characters" data-ui-placeholder="至少4位" autocomplete="new-password" required />
       </label>
       <label class="participant-code-control">
-        <span>显示名（选填）</span>
-        <input type="text" id="regDisplayName" placeholder="你希望别人看到的名称" autocomplete="name" />
+        <span data-ui-copy="显示名（选填）">Display name (optional)</span>
+        <input type="text" id="regDisplayName" placeholder="The name you want others to see" data-ui-placeholder="你希望别人看到的名称" autocomplete="name" />
       </label>
-      <button class="warm-btn primary" type="submit">注 册</button>
+      <button class="warm-btn primary" type="submit" data-ui-copy="注 册">Register</button>
     </form>
 
     <p class="login-status" id="loginStatus"></p>
 
-    <div class="login-divider">或者</div>
+    <div class="login-divider" data-ui-copy="或者">or</div>
 
     <p class="login-hint">
-      <a href="/">← 返回首页（游客模式）</a>
+      <a href="/" data-ui-copy="← 返回首页（游客模式）">← Return home as a guest</a>
     </p>
   </section>
 
 </main>
 
-<script src="/static/auth.js?v=20260624b"></script>
-<script src="/static/login.js?v=20260607a"></script>
+<script src="/static/auth.js?v=20261010c"></script>
+<script src="/static/login.js?v=20261010a"></script>
 </body>
 </html>

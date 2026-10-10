@@ -7,71 +7,71 @@ const BODY_PARTICIPANT_STORAGE_KEYS = [
 ];
 
 const BODY_STRUCTURE = [
-  { id: "head", label: "头部", symptoms: [
-    { id: "headache", label: "头疼" },
-    { id: "dizziness", label: "头晕" },
-    { id: "brain_fog", label: "脑雾/注意力涣散" },
-    { id: "clear_head", label: "头脑清晰", positive: true },
-    { id: "focused", label: "专注有力", positive: true },
+  { id: "head", label: SharedI18N.pick("头部", "Head"), symptoms: [
+    { id: "headache", label: SharedI18N.pick("头疼", "Headache") },
+    { id: "dizziness", label: SharedI18N.pick("头晕", "Dizziness") },
+    { id: "brain_fog", label: SharedI18N.pick("脑雾/注意力涣散", "Brain fog / difficulty focusing") },
+    { id: "clear_head", label: SharedI18N.pick("头脑清晰", "Clear-headed"), positive: true },
+    { id: "focused", label: SharedI18N.pick("专注有力", "Focused"), positive: true },
   ]},
-  { id: "eyes", label: "眼部", symptoms: [
-    { id: "eye_strain", label: "眼疲劳" },
-    { id: "dry_eyes", label: "眼干" },
-    { id: "blurred_vision", label: "视物模糊" },
-    { id: "bright_eyes", label: "眼神明亮", positive: true },
+  { id: "eyes", label: SharedI18N.pick("眼部", "Eyes"), symptoms: [
+    { id: "eye_strain", label: SharedI18N.pick("眼疲劳", "Eye strain") },
+    { id: "dry_eyes", label: SharedI18N.pick("眼干", "Dry eyes") },
+    { id: "blurred_vision", label: SharedI18N.pick("视物模糊", "Blurred vision") },
+    { id: "bright_eyes", label: SharedI18N.pick("眼神明亮", "Bright eyes"), positive: true },
   ]},
-  { id: "throat_mouth", label: "口咽", symptoms: [
-    { id: "throat_tightness", label: "喉咙紧/异物感" },
-    { id: "dry_throat", label: "嗓子干" },
-    { id: "jaw_tension", label: "下颌/牙关紧绷" },
-    { id: "voice_clear", label: "声音通畅", positive: true },
+  { id: "throat_mouth", label: SharedI18N.pick("口咽", "Throat / mouth"), symptoms: [
+    { id: "throat_tightness", label: SharedI18N.pick("喉咙紧/异物感", "Throat tightness") },
+    { id: "dry_throat", label: SharedI18N.pick("嗓子干", "Dry throat") },
+    { id: "jaw_tension", label: SharedI18N.pick("下颌/牙关紧绷", "Jaw tension") },
+    { id: "voice_clear", label: SharedI18N.pick("声音通畅", "Clear voice"), positive: true },
   ]},
-  { id: "chest", label: "胸口", symptoms: [
-    { id: "chest_tightness", label: "胸闷/压迫感" },
-    { id: "palpitation", label: "心跳过快/心慌" },
-    { id: "short_breath", label: "呼吸困难/气短" },
-    { id: "chest_open", label: "呼吸顺畅", positive: true },
-    { id: "heart_warm", label: "心里温暖", positive: true },
+  { id: "chest", label: SharedI18N.pick("胸口", "Chest"), symptoms: [
+    { id: "chest_tightness", label: SharedI18N.pick("胸闷/压迫感", "Chest tightness") },
+    { id: "palpitation", label: SharedI18N.pick("心跳过快/心慌", "Racing heartbeat") },
+    { id: "short_breath", label: SharedI18N.pick("呼吸困难/气短", "Shortness of breath") },
+    { id: "chest_open", label: SharedI18N.pick("呼吸顺畅", "Easy breathing"), positive: true },
+    { id: "heart_warm", label: SharedI18N.pick("心里温暖", "Warm-hearted"), positive: true },
   ]},
-  { id: "shoulder_neck", label: "肩颈", symptoms: [
-    { id: "neck_stiff", label: "颈部僵硬" },
-    { id: "shoulder_pain", label: "肩膀酸痛" },
-    { id: "muscle_tight", label: "肌肉紧绷" },
-    { id: "shoulder_relax", label: "肩颈放松", positive: true },
+  { id: "shoulder_neck", label: SharedI18N.pick("肩颈", "Shoulders / neck"), symptoms: [
+    { id: "neck_stiff", label: SharedI18N.pick("颈部僵硬", "Stiff neck") },
+    { id: "shoulder_pain", label: SharedI18N.pick("肩膀酸痛", "Shoulder ache") },
+    { id: "muscle_tight", label: SharedI18N.pick("肌肉紧绷", "Muscle tension") },
+    { id: "shoulder_relax", label: SharedI18N.pick("肩颈放松", "Relaxed shoulders"), positive: true },
   ]},
-  { id: "stomach", label: "胃部", symptoms: [
-    { id: "stomach_pain", label: "胃痛/痉挛" },
-    { id: "nausea", label: "恶心/反胃" },
-    { id: "appetite_loss", label: "食欲下降" },
-    { id: "bloating", label: "腹胀/胀气" },
-    { id: "appetite_good", label: "食欲好", positive: true },
-    { id: "stomach_comfy", label: "胃部舒适", positive: true },
+  { id: "stomach", label: SharedI18N.pick("胃部", "Stomach"), symptoms: [
+    { id: "stomach_pain", label: SharedI18N.pick("胃痛/痉挛", "Stomach pain / cramps") },
+    { id: "nausea", label: SharedI18N.pick("恶心/反胃", "Nausea") },
+    { id: "appetite_loss", label: SharedI18N.pick("食欲下降", "Reduced appetite") },
+    { id: "bloating", label: SharedI18N.pick("腹胀/胀气", "Bloating") },
+    { id: "appetite_good", label: SharedI18N.pick("食欲好", "Good appetite"), positive: true },
+    { id: "stomach_comfy", label: SharedI18N.pick("胃部舒适", "Comfortable stomach"), positive: true },
   ]},
-  { id: "back", label: "腰背", symptoms: [
-    { id: "lower_back", label: "腰酸背痛" },
-    { id: "back_stiff", label: "背部僵硬" },
-    { id: "back_relax", label: "腰背舒展", positive: true },
+  { id: "back", label: SharedI18N.pick("腰背", "Lower back"), symptoms: [
+    { id: "lower_back", label: SharedI18N.pick("腰酸背痛", "Back ache") },
+    { id: "back_stiff", label: SharedI18N.pick("背部僵硬", "Stiff back") },
+    { id: "back_relax", label: SharedI18N.pick("腰背舒展", "Relaxed back"), positive: true },
   ]},
-  { id: "hands", label: "手部", symptoms: [
-    { id: "hand_shaking", label: "手抖" },
-    { id: "cold_hands", label: "手冰凉" },
-    { id: "sweaty_hands", label: "手心出汗" },
-    { id: "hands_warm", label: "双手温暖", positive: true },
+  { id: "hands", label: SharedI18N.pick("手部", "Hands"), symptoms: [
+    { id: "hand_shaking", label: SharedI18N.pick("手抖", "Shaking hands") },
+    { id: "cold_hands", label: SharedI18N.pick("手冰凉", "Cold hands") },
+    { id: "sweaty_hands", label: SharedI18N.pick("手心出汗", "Sweaty palms") },
+    { id: "hands_warm", label: SharedI18N.pick("双手温暖", "Warm hands"), positive: true },
   ]},
-  { id: "legs", label: "腿部", symptoms: [
-    { id: "leg_heavy", label: "腿沉/无力" },
-    { id: "cold_feet", label: "脚冰凉" },
-    { id: "restless_legs", label: "腿部躁动不安" },
-    { id: "legs_light", label: "步伐轻盈", positive: true },
+  { id: "legs", label: SharedI18N.pick("腿部", "Legs"), symptoms: [
+    { id: "leg_heavy", label: SharedI18N.pick("腿沉/无力", "Heavy legs") },
+    { id: "cold_feet", label: SharedI18N.pick("脚冰凉", "Cold feet") },
+    { id: "restless_legs", label: SharedI18N.pick("腿部躁动不安", "Restless legs") },
+    { id: "legs_light", label: SharedI18N.pick("步伐轻盈", "Light steps"), positive: true },
   ]},
-  { id: "whole_body", label: "全身", symptoms: [
-    { id: "fatigue", label: "疲惫/乏力" },
-    { id: "insomnia", label: "失眠/睡眠差" },
-    { id: "sweating", label: "出汗/冷汗" },
-    { id: "restless", label: "坐立不安" },
-    { id: "energized", label: "精力充沛", positive: true },
-    { id: "calm_body", label: "全身放松", positive: true },
-    { id: "grounded", label: "踏实稳定", positive: true },
+  { id: "whole_body", label: SharedI18N.pick("全身", "Whole body"), symptoms: [
+    { id: "fatigue", label: SharedI18N.pick("疲惫/乏力", "Fatigue") },
+    { id: "insomnia", label: SharedI18N.pick("失眠/睡眠差", "Difficulty sleeping") },
+    { id: "sweating", label: SharedI18N.pick("出汗/冷汗", "Sweating / cold sweats") },
+    { id: "restless", label: SharedI18N.pick("坐立不安", "Restless") },
+    { id: "energized", label: SharedI18N.pick("精力充沛", "Energized"), positive: true },
+    { id: "calm_body", label: SharedI18N.pick("全身放松", "Relaxed body"), positive: true },
+    { id: "grounded", label: SharedI18N.pick("踏实稳定", "Grounded"), positive: true },
   ]},
 ];
 
@@ -177,9 +177,9 @@ const els = {
 
 function bodyLang() {
   try {
-    return window.SharedI18N?.lang?.() || localStorage.getItem("emomirror.lang") || "zh";
+    return window.SharedI18N?.lang?.() || (localStorage.getItem("emomirror.lang") === "zh" ? "zh" : "en");
   } catch (error) {
-    return "zh";
+    return "en";
   }
 }
 
@@ -206,6 +206,7 @@ function bodyLabel(item) {
 }
 
 function bodyEmotionLabel(label) {
+  if (window.SharedI18N?.label) return window.SharedI18N.label(label);
   const text = String(label || "");
   if (!bodyIsEnglish()) return text;
   return BODY_EMOTION_LABEL_EN[text.trim()] || text;
@@ -502,7 +503,7 @@ function renderAdvice(data) {
   meta.textContent = `${bodyT("body.emotionClue", bodyText("情绪线索", "Emotion clue"))}: ${bodyEmotionLabel(context.primary_label) || "-"} · ${bodyT("body.source", bodyText("来源", "Source"))}: ${advice.source || "-"}`;
   els.adviceContent.appendChild(meta);
 
-  appendAdviceList(bodyT("body.bodyEmotionLinks", bodyText("身体-情绪线索", "Body-emotion links")), links.map((item) => `${item.label || item.type || bodyText("线索", "Clue")}: ${item.description || ""}`));
+  appendAdviceList(bodyT("body.bodyEmotionLinks", bodyText("身体-情绪线索", "Body-emotion links")), links.map((item) => `${item.label || item.type || bodyText("线索", "Clue")}: ${item.explanation || item.description || ""}`));
   appendAdviceList(bodyT("body.stepsToTry", bodyText("可尝试步骤", "Steps to try")), advice.steps || [], true);
 
   if (advice.reflection_prompt) {
@@ -513,6 +514,7 @@ function renderAdvice(data) {
     appendAdviceList(bodyT("body.riskWarning", bodyText("风险提示", "Risk warning")), safety.red_flags);
   }
 
+  appendAdviceList(bodyText("何时求助", "When to seek help"), advice.when_to_seek_help || []);
   appendAdviceParagraph(bodyT("body.note", bodyText("说明", "Note")), bodyT("body.nonMedicalNote", bodyText("这些建议不构成医疗诊断；如果症状明显、持续或让你担心，请优先寻求专业帮助。", "These suggestions are not a medical diagnosis. If symptoms are strong, persistent, or worrying, seek professional help first.")));
 }
 
@@ -593,7 +595,7 @@ function bindEvents() {
 }
 
 function boot() {
-  const code = readParticipantFromUrl() || readParticipantFromStorage() || "local";
+  const code = currentParticipantCode();
   rememberParticipantCode(code);
   renderRegionChips();
   renderSymptomChips();

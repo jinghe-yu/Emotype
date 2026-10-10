@@ -21,9 +21,9 @@
     try {
       return global.SharedI18N && global.SharedI18N.lang
         ? global.SharedI18N.lang()
-        : (localStorage.getItem("emomirror.lang") || "zh");
+        : (localStorage.getItem("emomirror.lang") === "zh" ? "zh" : "en");
     } catch (e) {
-      return "zh";
+      return "en";
     }
   }
 
@@ -105,12 +105,12 @@
       function (response) {
         if (response.status === 401) {
           logout();
-          throw new Error(authText("登录已过期，请重新登录。", "Login expired. Please sign in again."));
+          throw new Error(SharedI18N.pick("登录已过期，请重新登录。", "Your session has expired. Please log in again."));
         }
         if (!response.ok) {
           return response.json().then(function (data) {
             throw new Error(
-              data.detail || data.message || authText("请求失败", "Request failed") + " (" + response.status + ")"
+              SharedI18N.text((typeof data.detail === "object" ? data.detail.message : data.detail) || data.message || SharedI18N.pick("请求失败 (", "Request failed (") + response.status + ")")
             );
           });
         }
@@ -150,7 +150,7 @@
         badge.className = "auth-user-badge";
         badge.id = "authUserBadge";
         badge.href = "/profile";
-        badge.title = authText("个人信息", "Profile");
+        badge.title = SharedI18N.pick("个人信息", "Profile");
 
         var avatarSpan = document.createElement("span");
         avatarSpan.className = "auth-avatar-mini";
@@ -167,7 +167,7 @@
         var logoutBtn = document.createElement("button");
         logoutBtn.className = "auth-logout-btn";
         logoutBtn.id = "authLogoutBtn";
-        logoutBtn.textContent = authText("退出", "Logout");
+        logoutBtn.textContent = SharedI18N.pick("退出", "Log out");
         logoutBtn.addEventListener("click", function (e) {
           e.preventDefault();
           logout();
@@ -190,27 +190,27 @@
         badge.className = "auth-user-badge auth-guest-badge";
         badge.id = "authUserBadge";
         badge.type = "button";
-        badge.title = authText("点击设置昵称", "Set nickname");
+        badge.title = SharedI18N.pick("点击设置昵称", "Set your nickname");
 
         var avatarSpan = document.createElement("span");
         avatarSpan.className = "auth-avatar-mini auth-avatar-guest";
-        avatarSpan.textContent = nickname ? nickname[0].toUpperCase() : authText("访", "G");
+        avatarSpan.textContent = nickname ? nickname[0].toUpperCase() : SharedI18N.pick("访", "G");
 
         var nameSpan = document.createElement("span");
         nameSpan.className = "auth-user-name";
         nameSpan.id = "authGuestName";
-        nameSpan.textContent = nickname || authText("访客", "Guest");
+        nameSpan.textContent = nickname || SharedI18N.pick("访客", "Guest");
 
         badge.appendChild(avatarSpan);
         badge.appendChild(nameSpan);
         badge.addEventListener("click", function () {
           var current;
           try { current = localStorage.getItem(NICKNAME_KEY) || ""; } catch (e) { current = ""; }
-          var newName = prompt(authText("设置你的昵称（留空恢复默认）：", "Set your nickname (leave blank to reset):"), current);
+          var newName = prompt(SharedI18N.pick("设置你的昵称（留空恢复默认）：", "Set your nickname (leave blank to reset):"), current);
           if (newName === null) return;
           newName = newName.trim().slice(0, 20);
           try { localStorage.setItem(NICKNAME_KEY, newName); } catch (e) {}
-          var display = newName || authText("访客", "Guest");
+          var display = newName || SharedI18N.pick("访客", "Guest");
           document.getElementById("authGuestName").textContent = display;
           document.querySelector("#authUserBadge .auth-avatar-guest").textContent = display[0].toUpperCase();
         });
@@ -222,7 +222,7 @@
           loginLink.className = "auth-login-link";
           loginLink.id = "authLoginLink";
           loginLink.href = "/login";
-          loginLink.textContent = authText("登录", "Login");
+          loginLink.textContent = SharedI18N.pick("登录", "Login");
           topbarRight.insertBefore(loginLink, badge.nextSibling);
         }
       }

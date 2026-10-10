@@ -69,11 +69,11 @@ function formatSigned(value) {
 
 function sourceLabel(source) {
   return {
-    journal: "Journal 随手记",
-    diary: "Diary 正式日记",
-    body_sensation: "Body 身体感受",
-    realtime_emotion: "实时情绪",
-  }[source] || source || "记录";
+    journal: SharedI18N.pick("Journal 随手记", "Journal"),
+    diary: SharedI18N.pick("Diary 正式日记", "Diary"),
+    body_sensation: SharedI18N.pick("Body 身体感受", "Body Sense"),
+    realtime_emotion: SharedI18N.pick("实时情绪", "Live emotion"),
+  }[source] || source || SharedI18N.pick("记录", "Record");
 }
 
 function sourceClass(source) {
@@ -107,7 +107,7 @@ function renderSummary(data) {
 }
 
 function textPreview(record) {
-  return record.summary || record.content || "记录摘要";
+  return record.summary || record.content || SharedI18N.pick("记录摘要", "Record summary");
 }
 
 function renderRecords(records = []) {
@@ -115,7 +115,7 @@ function renderRecords(records = []) {
   if (!records.length) {
     const empty = document.createElement("p");
     empty.className = "records-empty";
-    empty.textContent = "这个范围内还没有符合条件的记录。";
+    empty.textContent = SharedI18N.pick("这个范围内还没有符合条件的记录。", "No matching records in this date range.");
     els.list.appendChild(empty);
     return;
   }
@@ -131,7 +131,7 @@ function renderRecords(records = []) {
 
     const main = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = record.primary_emotion || sourceLabel(record.source);
+    title.textContent = SharedI18N.label(record.primary_emotion) || sourceLabel(record.source);
     const meta = document.createElement("small");
     meta.textContent = `${sourceLabel(record.source)} · ${record.time || record.date || ""} · V ${formatSigned(record.valence)} · A ${formatSigned(record.arousal)}`;
     const preview = document.createElement("p");
@@ -142,22 +142,22 @@ function renderRecords(records = []) {
 
     const detail = document.createElement("div");
     detail.className = "record-detail";
-    appendDetailSection(detail, "内容摘要", record.content || record.summary || "-");
+    appendDetailSection(detail, SharedI18N.pick("内容摘要", "Summary"), record.content || record.summary || "-");
     if (record.source === "diary") {
-      appendDetailSection(detail, "日记复盘摘要", record.reflection_summary || record.detail?.reflection_summary || "这篇日记还没有复盘摘要。");
+      appendDetailSection(detail, SharedI18N.pick("日记复盘摘要", "Diary reflection summary"), record.reflection_summary || record.detail?.reflection_summary || SharedI18N.pick("这篇日记还没有复盘摘要。", "No reflection summary for this diary yet."));
     }
     if (record.source === "body_sensation") {
       const bodySummary = [
         ...(record.body_regions || []),
         ...(record.body_signals || []),
       ].filter(Boolean).join("、");
-      appendDetailSection(detail, "身体部位 / 身体信号", bodySummary || "暂无身体信号摘要。");
+      appendDetailSection(detail, SharedI18N.pick("身体部位 / 身体信号", "Body regions / signals"), bodySummary || SharedI18N.pick("暂无身体信号摘要。", "No body signal summary yet."));
     }
     if (Array.isArray(record.fine_emotions) && record.fine_emotions.length) {
-      appendChipSection(detail, "细粒度情绪", record.fine_emotions);
+      appendChipSection(detail, SharedI18N.pick("细粒度情绪", "Fine-grained Emotions"), record.fine_emotions.map(SharedI18N.label));
     }
     if (Array.isArray(record.body_signals) && record.body_signals.length && record.source !== "body_sensation") {
-      appendChipSection(detail, "身体信号", record.body_signals);
+      appendChipSection(detail, SharedI18N.pick("身体信号", "Body Signals"), record.body_signals);
     }
     item.appendChild(detail);
     els.list.appendChild(item);
@@ -193,14 +193,14 @@ function appendChipSection(parent, label, values) {
 
 async function loadRecords() {
   els.loadBtn.disabled = true;
-  setState("载入中");
+  setState(SharedI18N.pick("载入中", "Loading"));
   try {
     const data = await apiJson(`/api/records?${queryString()}`);
     renderSummary(data);
     renderRecords(data.records || []);
-    setState("已载入");
+    setState(SharedI18N.pick("已载入", "Loaded"));
   } catch (error) {
-    setState(`载入失败：${error.message}`);
+    setState(SharedI18N.pick(`载入失败：${error.message}`, `Could not load: ${error.message}`));
   } finally {
     els.loadBtn.disabled = false;
   }

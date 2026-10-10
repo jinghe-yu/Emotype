@@ -1,13 +1,13 @@
 const WEATHER_OPTIONS = ["sunny", "cloudy", "overcast", "rainy", "stormy", "snowy", "windy", "foggy"];
 const WEATHER_LABELS = {
-  sunny: "晴朗",
-  cloudy: "多云",
-  overcast: "阴天",
-  rainy: "下雨",
-  stormy: "暴风雨",
-  snowy: "下雪",
-  windy: "有风",
-  foggy: "有雾",
+  sunny: SharedI18N.pick("晴朗", "Sunny"),
+  cloudy: SharedI18N.pick("多云", "Cloudy"),
+  overcast: SharedI18N.pick("阴天", "Overcast"),
+  rainy: SharedI18N.pick("下雨", "Rainy"),
+  stormy: SharedI18N.pick("暴风雨", "Stormy"),
+  snowy: SharedI18N.pick("下雪", "Snowy"),
+  windy: SharedI18N.pick("有风", "Windy"),
+  foggy: SharedI18N.pick("有雾", "Foggy"),
 };
 
 const els = {
@@ -124,11 +124,11 @@ function hexToRgba(hex, alpha) {
 
 function sourceLabel(source) {
   return {
-    journal: "随手记",
-    body_sensation: "身体感受",
-    realtime_emotion: "实时情绪",
-    local_journal: "本地随手记",
-  }[source] || source || "记录";
+    journal: SharedI18N.pick("随手记", "Journal"),
+    body_sensation: SharedI18N.pick("身体感受", "Body Sensation"),
+    realtime_emotion: SharedI18N.pick("实时情绪", "Live emotion"),
+    local_journal: SharedI18N.pick("本地随手记", "Local journal"),
+  }[source] || source || SharedI18N.pick("记录", "Record");
 }
 
 function contextKey(record) {
@@ -214,12 +214,12 @@ function applyReflectionFromDiary(diary) {
   const reflection = diary?.reflection_json || {};
   const hasReflection = Object.keys(reflection).length > 0;
   const color = diary?.emotion_color || reflection.emotion_color || "#94A3B8";
-  const primary = diary?.primary_emotion || reflection.primary_emotion || "尚无结果";
+  const primary = diary?.primary_emotion || reflection.primary_emotion || SharedI18N.pick("尚无结果", "No result yet");
   setVA(diary?.valence ?? reflection.valence ?? 0, diary?.arousal ?? reflection.arousal ?? 0, color);
-  els.colorName.textContent = diary?.emotion_color_name || reflection.emotion_color_name || "雾灰中性";
-  els.reflectionPrimary.textContent = primary;
-  els.reflectionSummary.textContent = reflection.event_summary || (hasReflection ? "今日复盘" : "写完后会生成当天复盘");
-  els.reflectionGentle.textContent = reflection.gentle_reflection || "复盘会参考正文、所选天气和今日情绪记录，但不会把情绪强行归因于天气。";
+  els.colorName.textContent = diary?.emotion_color_name || reflection.emotion_color_name || SharedI18N.pick("雾灰中性", "Neutral grey");
+  els.reflectionPrimary.textContent = SharedI18N.label(primary);
+  els.reflectionSummary.textContent = reflection.event_summary || (hasReflection ? SharedI18N.pick("今日复盘", "Today’s reflection") : SharedI18N.pick("写完后会生成当天复盘", "Write an entry, then generate a reflection"));
+  els.reflectionGentle.textContent = reflection.gentle_reflection || SharedI18N.pick("复盘会参考正文、所选天气和今日情绪记录，但不会把情绪强行归因于天气。", "Reflections use your entry, selected weather and today’s records without assuming the weather caused your feelings.");
   els.reflectionTrigger.textContent = reflection.possible_trigger || "-";
   els.reflectionNeed.textContent = reflection.possible_need || "-";
   els.weatherReflection.textContent = reflection.weather_reflection || "-";
@@ -228,7 +228,7 @@ function applyReflectionFromDiary(diary) {
   renderChipList(els.fineEmotionChips, reflection.fine_grained_emotions || diary?.fine_emotions_json || []);
   renderChipList(els.bodySignalChips, reflection.body_signals || diary?.body_signals_json || []);
   renderQuestions(reflection.reflection_questions || []);
-  setReflectionState(diary?.analysis_pending ? "待更新" : (hasReflection ? "已复盘" : "待复盘"));
+  setReflectionState(diary?.analysis_pending ? SharedI18N.pick("待更新", "Needs an update") : (hasReflection ? SharedI18N.pick("已复盘", "Reflected") : SharedI18N.pick("待复盘", "Awaiting reflection")));
 }
 
 function applyDiary(diary) {
@@ -242,7 +242,7 @@ function applyDiary(diary) {
   state.dirty = false;
   state.lastReflectHash = state.diary.analysis_pending ? "" : reflectHash();
   applyReflectionFromDiary(state.diary);
-  setSaveState(state.diary.id ? "已载入" : "空草稿");
+  setSaveState(state.diary.id ? SharedI18N.pick("已载入", "Loaded") : SharedI18N.pick("空草稿", "Empty draft"));
   state.hydrating = false;
 }
 
@@ -253,11 +253,11 @@ function localJournalContext() {
     return entries.slice(0, 8).map((entry, index) => ({
       source: "local_journal",
       id: entry.id || `local-${index}`,
-      time: entry.date || "本地记录",
-      summary: entry.text || "本地随手记记录",
+      time: entry.date || SharedI18N.pick("本地记录", "Local record"),
+      summary: entry.text || SharedI18N.pick("本地随手记记录", "Local journal entry"),
       valence: entry.valence,
       arousal: entry.arousal,
-      primary_emotion: entry.label || "中性",
+      primary_emotion: entry.label || SharedI18N.pick("中性", "Neutral"),
     }));
   } catch (error) {
     return [];
@@ -270,7 +270,7 @@ function renderContext() {
   if (!state.contextRecords.length) {
     const empty = document.createElement("p");
     empty.className = "context-empty";
-    empty.textContent = "今天还没有可查询的随手记、身体感受或实时情绪记录。";
+    empty.textContent = SharedI18N.pick("今天还没有可查询的随手记、身体感受或实时情绪记录。", "No Journal, Body Sense or live emotion records for today yet.");
     els.contextList.appendChild(empty);
     return;
   }
@@ -299,12 +299,12 @@ function renderContext() {
     time.textContent = record.time ? new Date(record.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
     if (Number.isNaN(new Date(record.time).getTime())) time.textContent = record.time || "";
     const emotion = document.createElement("span");
-    emotion.textContent = record.primary_emotion || "中性";
+    emotion.textContent = record.primary_emotion || SharedI18N.pick("中性", "Neutral");
     meta.append(source, time, emotion);
 
     const summary = document.createElement("p");
     summary.className = "context-summary";
-    summary.textContent = record.summary || "记录";
+    summary.textContent = record.summary || SharedI18N.pick("记录", "Record");
 
     const va = document.createElement("div");
     va.className = "context-va";
@@ -330,13 +330,13 @@ async function loadContext() {
 async function loadDiary() {
   clearTimeout(state.autosaveTimer);
   clearTimeout(state.idleReflectTimer);
-  setSaveState("载入中");
+  setSaveState(SharedI18N.pick("载入中", "Loading"));
   const url = queryWithParticipant(`/api/diary?date=${encodeURIComponent(els.date.value)}`);
   try {
     const data = await apiJson(url);
     applyDiary(data.diary || {});
   } catch (error) {
-    setSaveState(`载入失败：${error.message}`);
+    setSaveState(SharedI18N.pick(`载入失败：${error.message}`, `Could not load: ${error.message}`));
     applyDiary({ diary_date: els.date.value, physical_weather: "sunny", mood_weather: "sunny" });
   }
   await loadContext();
@@ -346,7 +346,7 @@ async function saveDiary(saveType = "autosave") {
   if (state.saving) return state.savePromise || state.diary;
   state.saving = true;
   els.saveBtn.disabled = true;
-  setSaveState(saveType === "autosave" ? "自动保存中" : "保存中");
+  setSaveState(saveType === "autosave" ? SharedI18N.pick("自动保存中", "Autosaving") : SharedI18N.pick("保存中", "Saving"));
   state.savePromise = (async () => {
     const payload = currentPayload(saveType);
     const payloadHash = reflectHash();
@@ -356,14 +356,14 @@ async function saveDiary(saveType = "autosave") {
     });
     state.diary = data.diary;
     state.dirty = reflectHash() !== payloadHash;
-    setSaveState(state.dirty ? "有未保存修改" : (saveType === "autosave" ? "已自动保存" : "已保存"));
+    setSaveState(state.dirty ? SharedI18N.pick("有未保存修改", "Unsaved changes") : (saveType === "autosave" ? SharedI18N.pick("已自动保存", "Autosaved") : SharedI18N.pick("已保存", "Saved")));
     applyReflectionFromDiary(state.diary);
     return state.diary;
   })();
   try {
     return await state.savePromise;
   } catch (error) {
-    setSaveState(`保存失败：${error.message}`);
+    setSaveState(SharedI18N.pick(`保存失败：${error.message}`, `Could not save: ${error.message}`));
     throw error;
   } finally {
     state.saving = false;
@@ -377,12 +377,12 @@ async function reflectDiary(reason = "manual") {
   const contentLength = els.content.value.trim().length;
   if (state.reflecting) return;
   if (!contentLength) {
-    setReflectionState("待复盘");
-    if (reason === "manual") setSaveState("先写一点内容再复盘");
+    setReflectionState(SharedI18N.pick("待复盘", "Awaiting reflection"));
+    if (reason === "manual") setSaveState(SharedI18N.pick("先写一点内容再复盘", "Write something before generating a reflection"));
     return;
   }
   if (reason === "idle" && contentLength < 24) {
-    setReflectionState("待复盘");
+    setReflectionState(SharedI18N.pick("待复盘", "Awaiting reflection"));
     return;
   }
   if (reason === "idle" && hash === state.lastReflectHash) return;
@@ -390,15 +390,15 @@ async function reflectDiary(reason = "manual") {
   state.reflecting = true;
   els.reflectBtn.disabled = true;
   els.saveBtn.disabled = true;
-  setReflectionState("复盘中");
+  setReflectionState(SharedI18N.pick("复盘中", "Reflecting"));
   try {
     if (state.saving) await saveDiary(reason === "manual" ? "manual" : "autosave");
     for (let attempts = 0; state.dirty && attempts < 2; attempts += 1) {
       await saveDiary(reason === "manual" ? "manual" : "autosave");
     }
     if (state.dirty) {
-      setReflectionState("待更新");
-      setSaveState("有未保存修改");
+      setReflectionState(SharedI18N.pick("待更新", "Needs an update"));
+      setSaveState(SharedI18N.pick("有未保存修改", "Unsaved changes"));
       return;
     }
     const data = await apiJson(`/api/diary/by-date/${encodeURIComponent(els.date.value)}/reflect`, {
@@ -412,10 +412,10 @@ async function reflectDiary(reason = "manual") {
     state.lastReflectHash = reflectHash();
     state.dirty = false;
     applyReflectionFromDiary(state.diary);
-    setSaveState("复盘已保存");
+    setSaveState(SharedI18N.pick("复盘已保存", "Reflection saved"));
   } catch (error) {
-    setReflectionState("复盘失败");
-    setSaveState(`复盘失败：${error.message}`);
+    setReflectionState(SharedI18N.pick("复盘失败", "Reflection failed"));
+    setSaveState(SharedI18N.pick(`复盘失败：${error.message}`, `Reflection failed: ${error.message}`));
   } finally {
     state.reflecting = false;
     els.reflectBtn.disabled = false;
@@ -426,9 +426,9 @@ async function reflectDiary(reason = "manual") {
 function scheduleAutosave() {
   if (state.hydrating) return;
   state.dirty = true;
-  setSaveState("等待自动保存");
+  setSaveState(SharedI18N.pick("等待自动保存", "Waiting to autosave"));
   if ((state.diary?.reflection_json && Object.keys(state.diary.reflection_json).length) || state.diary?.last_analyzed_at) {
-    setReflectionState("待更新");
+    setReflectionState(SharedI18N.pick("待更新", "Needs an update"));
   }
   clearTimeout(state.autosaveTimer);
   clearTimeout(state.idleReflectTimer);
@@ -444,9 +444,9 @@ function scheduleAutosave() {
 function insertSelectedContext() {
   const selected = state.contextRecords.filter((record) => state.selectedSourceIds.has(contextKey(record)));
   if (!selected.length) return;
-  const lines = selected.map((record) => `- ${sourceLabel(record.source)}｜${record.primary_emotion || "中性"}：${record.summary || "记录"}`);
+  const lines = selected.map((record) => SharedI18N.pick(`- ${sourceLabel(record.source)}｜${record.primary_emotion || "中性"}：${record.summary || "记录"}`, `- ${sourceLabel(record.source)}｜${record.primary_emotion || "Neutral"}：${record.summary || "Record"}`));
   const prefix = els.content.value.trim() ? "\n\n" : "";
-  els.content.value += `${prefix}今日参考素材：\n${lines.join("\n")}\n`;
+  els.content.value += SharedI18N.pick(`${prefix}今日参考素材：\n${lines.join("\n")}\n`, `${prefix}Today’s reference material:\n${lines.join("\n")}\n`);
   els.content.focus();
   scheduleAutosave();
 }
@@ -455,7 +455,7 @@ function setupSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRecognition) {
     state.recognition = new SpeechRecognition();
-    state.recognition.lang = "zh-CN";
+    state.recognition.lang = SharedI18N.lang() === "zh" ? "zh-CN" : "en-US";
     state.recognition.continuous = true;
     state.recognition.interimResults = true;
     let finalText = "";
@@ -473,27 +473,27 @@ function setupSpeechRecognition() {
         finalText = "";
         scheduleAutosave();
       }
-      els.voiceBtn.textContent = interim ? "正在听写…" : "停止听写";
+      els.voiceBtn.textContent = interim ? SharedI18N.pick("正在听写…", "Listening…") : SharedI18N.pick("停止听写", "Stop dictation");
     };
     state.recognition.onerror = (event) => {
       state.listening = false;
-      els.voiceBtn.textContent = "语音转文字";
+      els.voiceBtn.textContent = SharedI18N.pick("语音转文字", "Voice to text");
       const msgs = {
-        "not-allowed": "请允许麦克风权限后重试",
-        "network": "语音识别需要网络连接（Google 服务）",
-        "no-speech": "未检测到声音，请重试",
-        "audio-capture": "麦克风不可用，请检查设备",
+        "not-allowed": SharedI18N.pick("请允许麦克风权限后重试", "Allow microphone access and try again"),
+        "network": SharedI18N.pick("语音识别需要网络连接（Google 服务）", "Speech recognition needs a network connection (Google service)"),
+        "no-speech": SharedI18N.pick("未检测到声音，请重试", "No speech detected. Please try again"),
+        "audio-capture": SharedI18N.pick("麦克风不可用，请检查设备", "Microphone unavailable. Check your device"),
       };
-      const msg = msgs[event.error] || "语音识别出错，请重试";
+      const msg = msgs[event.error] || SharedI18N.pick("语音识别出错，请重试", "Speech recognition failed. Try again");
       els.content.placeholder = msg;
-      setTimeout(() => { els.content.placeholder = "完整写下今天发生的事…"; }, 4000);
+      setTimeout(() => { els.content.placeholder = SharedI18N.pick("完整写下今天发生的事…", "Write about what happened today…"); }, 4000);
     };
     state.recognition.onend = () => {
       state.listening = false;
-      els.voiceBtn.textContent = "语音转文字";
+      els.voiceBtn.textContent = SharedI18N.pick("语音转文字", "Voice to text");
     };
   } else {
-    els.voiceBtn.title = "仅支持 Chrome / Edge 浏览器";
+    els.voiceBtn.title = SharedI18N.pick("仅支持 Chrome / Edge 浏览器", "Supported in Chrome / Edge");
   }
 
   // MediaRecorder-based server-side fallback
@@ -505,7 +505,7 @@ async function _transcribeWithServer(blob) {
   const fd = new FormData();
   fd.append("file", blob, "audio.webm");
   try {
-    els.voiceBtn.textContent = "识别中…";
+    els.voiceBtn.textContent = SharedI18N.pick("识别中…", "Transcribing…");
     const res = await fetch("/api/transcribe", { method: "POST", body: fd });
     if (!res.ok) throw new Error(await res.text());
     const { text } = await res.json();
@@ -517,7 +517,7 @@ async function _transcribeWithServer(blob) {
   } catch (err) {
     console.warn("Server transcription failed:", err);
   } finally {
-    els.voiceBtn.textContent = "语音转文字";
+    els.voiceBtn.textContent = SharedI18N.pick("语音转文字", "Voice to text");
     state.listening = false;
   }
 }
@@ -532,10 +532,10 @@ function toggleSpeech() {
   // Prefer Web Speech API
   if (state.recognition) {
     state.listening = true;
-    els.voiceBtn.textContent = "停止听写";
+    els.voiceBtn.textContent = SharedI18N.pick("停止听写", "Stop dictation");
     try { state.recognition.start(); } catch (e) {
       state.listening = false;
-      els.voiceBtn.textContent = "语音转文字";
+      els.voiceBtn.textContent = SharedI18N.pick("语音转文字", "Voice to text");
     }
     return;
   }
@@ -544,7 +544,7 @@ function toggleSpeech() {
   navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
     state.listening = true;
     state.mediaChunks = [];
-    els.voiceBtn.textContent = "停止录音";
+    els.voiceBtn.textContent = SharedI18N.pick("停止录音", "Stop recording");
     state.mediaRecorder = new MediaRecorder(stream);
     state.mediaRecorder.ondataavailable = (e) => { if (e.data.size) state.mediaChunks.push(e.data); };
     state.mediaRecorder.onstop = () => {
@@ -554,8 +554,8 @@ function toggleSpeech() {
     };
     state.mediaRecorder.start();
   }).catch(() => {
-    els.voiceBtn.textContent = "语音转文字";
-    els.voiceBtn.title = "麦克风权限被拒绝，请在浏览器设置中允许";
+    els.voiceBtn.textContent = SharedI18N.pick("语音转文字", "Voice to text");
+    els.voiceBtn.title = SharedI18N.pick("麦克风权限被拒绝，请在浏览器设置中允许", "Microphone access denied. Enable it in browser settings");
   });
 }
 

@@ -66,8 +66,8 @@ function dateSpanLabel(start, end) {
   const startDate = new Date(`${start}T00:00:00`);
   const endDate = new Date(`${end}T00:00:00`);
   const days = Math.round((endDate - startDate) / 86400000) + 1;
-  if (!Number.isFinite(days) || days <= 0) return "自定义";
-  return days === 7 ? "近 7 天" : `${days} 天`;
+  if (!Number.isFinite(days) || days <= 0) return SharedI18N.pick("自定义", "Custom");
+  return days === 7 ? SharedI18N.pick("近 7 天", "Last 7 days") : SharedI18N.pick(`${days} 天`, `${days} days`);
 }
 
 function queryString() {
@@ -115,11 +115,11 @@ function formatSigned(value) {
 
 function sourceLabel(source) {
   return {
-    journal: "随手记",
-    diary: "正式日记",
-    body_sensation: "身体感受",
-    realtime_emotion: "实时情绪",
-  }[source] || source || "记录";
+    journal: SharedI18N.pick("随手记", "Journal"),
+    diary: SharedI18N.pick("正式日记", "Diary"),
+    body_sensation: SharedI18N.pick("身体感受", "Body Sensation"),
+    realtime_emotion: SharedI18N.pick("实时情绪", "Live emotion"),
+  }[source] || source || SharedI18N.pick("记录", "Record");
 }
 
 function clearNode(node) {
@@ -146,7 +146,7 @@ function renderSummary(stats) {
 function renderPalette(colors = []) {
   clearNode(els.palette);
   if (!colors.length) {
-    emptyText(els.palette, "这段时间还没有情绪颜色记录。");
+    emptyText(els.palette, SharedI18N.pick("这段时间还没有情绪颜色记录。", "No emotion colors for this period yet."));
     return;
   }
   colors.forEach((item) => {
@@ -157,9 +157,9 @@ function renderPalette(colors = []) {
     chip.style.background = item.color || "#94A3B8";
     const body = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = item.name || (item.labels || []).slice(0, 2).join("、") || item.color || "情绪颜色";
+    title.textContent = SharedI18N.text(item.name) || (item.labels || []).slice(0, 2).map(SharedI18N.label).join(", ") || item.color || SharedI18N.pick("情绪颜色", "Emotion color");
     const meta = document.createElement("small");
-    meta.textContent = `${item.count || 0} 次${item.color ? ` · ${item.color}` : ""}`;
+    meta.textContent = `${item.count || 0} ${SharedI18N.pick("次", "times")}${item.color ? ` · ${item.color}` : ""}`;
     body.append(title, meta);
     swatch.append(chip, body);
     els.palette.appendChild(swatch);
@@ -169,7 +169,7 @@ function renderPalette(colors = []) {
 function renderRankedList(node, items = []) {
   clearNode(node);
   if (!items.length) {
-    emptyText(node, "暂无统计。");
+    emptyText(node, SharedI18N.pick("暂无统计。", "No statistics yet."));
     return;
   }
   const PALETTE = ["#F59E0B","#EF4444","#3B82F6","#10B981","#8B5CF6","#EC4899","#F97316","#06B6D4","#84CC16","#6366F1"];
@@ -179,9 +179,9 @@ function renderRankedList(node, items = []) {
     row.className = "review-rank-row";
     const head = document.createElement("div");
     const label = document.createElement("strong");
-    label.textContent = item.label || "未命名";
+    label.textContent = SharedI18N.label(item.label) || SharedI18N.pick("未命名", "Untitled");
     const count = document.createElement("span");
-    count.textContent = `${item.count || 0} 次`;
+    count.textContent = SharedI18N.pick(`${item.count || 0} 次`, `${item.count || 0} times`);
     head.append(label, count);
     const bar = document.createElement("i");
     bar.style.width = `${Math.max(8, ((Number(item.count) || 0) / max) * 100)}%`;
@@ -194,13 +194,13 @@ function renderRankedList(node, items = []) {
 function renderFineEmotions(items = []) {
   clearNode(els.fineEmotions);
   if (!items.length) {
-    emptyText(els.fineEmotions, "暂无细粒度情绪。");
+    emptyText(els.fineEmotions, SharedI18N.pick("暂无细粒度情绪。", "No fine-grained emotions yet."));
     return;
   }
   items.slice(0, 18).forEach((item) => {
     const chip = document.createElement("span");
     chip.className = "emotion-chip";
-    chip.textContent = `${item.label || "未命名"} · ${item.count || 0}`;
+    chip.textContent = `${SharedI18N.label(item.label) || SharedI18N.pick("未命名", "Untitled")} · ${item.count || 0}`;
     els.fineEmotions.appendChild(chip);
   });
 }
@@ -216,16 +216,16 @@ function renderDetailedList(node, items = [], empty) {
     row.className = "review-detail-row";
     const head = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = item.label || "线索";
+    title.textContent = item.label || SharedI18N.pick("线索", "Clue");
     const count = document.createElement("span");
-    count.textContent = `${item.count || 0} 次`;
+    count.textContent = SharedI18N.pick(`${item.count || 0} 次`, `${item.count || 0} times`);
     head.append(title, count);
     row.appendChild(head);
     const sourceLine = document.createElement("small");
     const sources = Object.entries(item.sources || {})
       .filter(([, value]) => value)
       .map(([key, value]) => `${sourceLabel(key)} ${value}`);
-    sourceLine.textContent = sources.join(" · ") || "来自记录文本";
+    sourceLine.textContent = sources.join(" · ") || SharedI18N.pick("来自记录文本", "From saved record text");
     row.appendChild(sourceLine);
     (item.samples || []).slice(0, 2).forEach((sample) => {
       const p = document.createElement("p");
@@ -256,27 +256,27 @@ function renderReport(reportLike) {
   const report = reportLike?.report_json || reportLike || null;
   state.report = report;
   if (!report || !Object.keys(report).length) {
-    setReportState("未生成");
-    els.reflectBtn.textContent = "生成复盘";
-    els.aiSummary.textContent = "还没有生成这段时间的复盘";
-    els.aiPattern.textContent = "打开页面只会加载统计数据；点击生成后会保存复盘，下次优先读取缓存。";
+    setReportState(SharedI18N.pick("未生成", "Not generated"));
+    els.reflectBtn.textContent = SharedI18N.pick("生成复盘", "Generate Review");
+    els.aiSummary.textContent = SharedI18N.pick("还没有生成这段时间的复盘", "No reflection for this period yet");
+    els.aiPattern.textContent = SharedI18N.pick("打开页面只会加载统计数据；点击生成后会保存复盘，下次优先读取缓存。", "Opening this page loads statistics only. Generate a reflection to save it for future visits.");
     renderListItems(els.aiTriggers, []);
     els.aiBodySignals.textContent = "-";
     renderListItems(els.aiQuestions, []);
     renderListItems(els.aiSmallSteps, []);
-    els.aiNonDiagnostic.textContent = "这份复盘只是帮助整理线索，不用于诊断。";
+    els.aiNonDiagnostic.textContent = SharedI18N.pick("这份复盘只是帮助整理线索，不用于诊断。", "This reflection organizes clues; it is not a diagnosis.");
     return;
   }
 
-  setReportState("已缓存");
-  els.reflectBtn.textContent = "更新复盘";
-  els.aiSummary.textContent = report.period_summary || "阶段性复盘";
+  setReportState(SharedI18N.pick("已缓存", "Cached"));
+  els.reflectBtn.textContent = SharedI18N.pick("更新复盘", "Update Reflection");
+  els.aiSummary.textContent = report.period_summary || SharedI18N.pick("阶段性复盘", "Period reflection");
   els.aiPattern.textContent = report.emotional_pattern || report.color_story || "";
   renderListItems(els.aiTriggers, report.possible_triggers || []);
   els.aiBodySignals.textContent = report.body_signal_summary || "-";
   renderListItems(els.aiQuestions, report.reflection_questions || []);
   renderListItems(els.aiSmallSteps, report.small_steps || []);
-  els.aiNonDiagnostic.textContent = report.non_diagnostic_note || "这份复盘只是帮助整理线索，不用于诊断。";
+  els.aiNonDiagnostic.textContent = report.non_diagnostic_note || SharedI18N.pick("这份复盘只是帮助整理线索，不用于诊断。", "This reflection organizes clues; it is not a diagnosis.");
 }
 
 function renderStats(stats) {
@@ -293,8 +293,8 @@ function renderStats(stats) {
   renderPalette(stats?.colors || []);
   renderRankedList(els.primaryEmotions, stats?.primary_emotions || []);
   renderFineEmotions(stats?.fine_emotions || []);
-  renderDetailedList(els.triggers, stats?.triggers || [], "这段时间还没有明显触发因素。");
-  renderDetailedList(els.bodySignals, stats?.body_signals || [], "这段时间还没有明显身体信号。");
+  renderDetailedList(els.triggers, stats?.triggers || [], SharedI18N.pick("这段时间还没有明显触发因素。", "No clear trigger clues for this period yet."));
+  renderDetailedList(els.bodySignals, stats?.body_signals || [], SharedI18N.pick("这段时间还没有明显身体信号。", "No clear body signals for this period yet."));
   drawTrend();
 }
 
@@ -303,7 +303,7 @@ function renderDayOptions(stats) {
   (stats.days || []).forEach((day) => {
     const option = document.createElement("option");
     option.value = day.date;
-    option.textContent = `${day.date}${day.count ? ` · ${day.count} 条` : ""}`;
+    option.textContent = `${day.date}${day.count ? ` · ${day.count} ${SharedI18N.pick("条", "records")}` : ""}`;
     els.daySelect.appendChild(option);
   });
   els.daySelect.value = state.selectedDay || "";
@@ -339,13 +339,13 @@ function renderDayDistribution() {
     color.style.background = item.emotion_color || "#94A3B8";
     const body = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = item.label || "未命名";
+    title.textContent = SharedI18N.label(item.label) || SharedI18N.pick("未命名", "Untitled");
     const sources = Object.entries(item.sources || {})
       .filter(([, value]) => value)
       .map(([source, count]) => `${sourceLabel(source)} ${count}`)
       .join(" · ");
     const meta = document.createElement("small");
-    meta.textContent = `${item.count || 0} 次${sources ? ` · ${sources}` : ""}`;
+    meta.textContent = `${item.count || 0} ${SharedI18N.pick("次", "times")}${sources ? ` · ${sources}` : ""}`;
     body.append(title, meta);
     row.append(color, body);
     els.donutLegend.appendChild(row);
@@ -356,9 +356,9 @@ function renderSourceDetails(stats) {
   clearNode(els.sourceDetails);
   const records = stats.records || [];
   const groups = [
-    { key: "journal", label: "Journal 随手记" },
-    { key: "diary", label: "Diary 正式日记" },
-    { key: "body_sensation", label: "Body 身体感受" },
+    { key: "journal", label: SharedI18N.pick("Journal 随手记", "Journal") },
+    { key: "diary", label: SharedI18N.pick("Diary 正式日记", "Diary") },
+    { key: "body_sensation", label: SharedI18N.pick("Body 身体感受", "Body Sense") },
   ];
 
   groups.forEach((group) => {
@@ -372,7 +372,7 @@ function renderSourceDetails(stats) {
 
     if (!rows.length) {
       const empty = document.createElement("p");
-      empty.textContent = "这段时间暂无该来源记录。";
+      empty.textContent = SharedI18N.pick("这段时间暂无该来源记录。", "No records from this source for this period.");
       details.appendChild(empty);
     } else {
       rows.forEach((record) => {
@@ -380,11 +380,11 @@ function renderSourceDetails(stats) {
         link.href = `/records?start_date=${encodeURIComponent(els.startDate.value)}&end_date=${encodeURIComponent(els.endDate.value)}&source=${encodeURIComponent(group.key)}`;
         link.className = "review-source-record";
         const title = document.createElement("strong");
-        title.textContent = record.primary_emotion || sourceLabel(record.source);
+        title.textContent = SharedI18N.label(record.primary_emotion) || sourceLabel(record.source);
         const meta = document.createElement("span");
         meta.textContent = `${record.date || ""} · V ${formatSigned(record.valence)} · A ${formatSigned(record.arousal)}`;
         const text = document.createElement("p");
-        text.textContent = record.summary || "记录摘要";
+        text.textContent = record.summary || SharedI18N.pick("记录摘要", "Record summary");
         link.append(title, meta, text);
         details.appendChild(link);
       });
@@ -493,28 +493,28 @@ async function loadReport() {
     const data = await apiJson(`/api/review/report?${queryString()}`);
     renderReport(data.report);
   } catch (error) {
-    setReportState("缓存读取失败");
+    setReportState(SharedI18N.pick("缓存读取失败", "Could not load cached reflection"));
     renderReport(null);
   }
 }
 
 async function loadOverview() {
-  setLoadState("载入中");
+  setLoadState(SharedI18N.pick("载入中", "Loading"));
   els.loadBtn.disabled = true;
   try {
     const data = await apiJson(`/api/review/overview?${queryString()}`);
     renderStats(data.stats || {});
-    setLoadState("已载入");
+    setLoadState(SharedI18N.pick("已载入", "Loaded"));
     await loadReport();
   } catch (error) {
-    setLoadState(`载入失败：${error.message}`);
+    setLoadState(SharedI18N.pick(`载入失败：${error.message}`, `Could not load: ${error.message}`));
   } finally {
     els.loadBtn.disabled = false;
   }
 }
 
 async function reflectReview() {
-  setReportState("生成中");
+  setReportState(SharedI18N.pick("生成中", "Generating"));
   els.reflectBtn.disabled = true;
   els.loadBtn.disabled = true;
   try {
@@ -528,9 +528,9 @@ async function reflectReview() {
     });
     renderStats(data.stats || state.stats || {});
     renderReport(data.report_json || data.report);
-    setReportState(data.llm_used ? "已生成" : "已生成，本地兜底");
+    setReportState(data.llm_used ? SharedI18N.pick("已生成", "Ready") : SharedI18N.pick("已生成，本地兜底", "Ready · local fallback"));
   } catch (error) {
-    setReportState(`生成失败：${error.message}`);
+    setReportState(SharedI18N.pick(`生成失败：${error.message}`, `Generation failed: ${error.message}`));
   } finally {
     els.reflectBtn.disabled = false;
     els.loadBtn.disabled = false;
@@ -559,7 +559,7 @@ function bindEvents() {
   });
   [els.startDate, els.endDate].forEach((input) => {
     input.addEventListener("change", () => {
-      setReportState("待读取");
+      setReportState(SharedI18N.pick("待读取", "Awaiting load"));
       loadOverview();
     });
   });

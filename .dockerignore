@@ -3,6 +3,9 @@
 .venv/
 .obsidian/
 node_modules/
+outputs/
+output/playwright/
+.playwright-cli/
 
 __pycache__/
 *.py[cod]

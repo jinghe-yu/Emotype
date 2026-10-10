@@ -42,7 +42,7 @@
   function _showWelcome() {
     messagesEl.innerHTML = '';
     history = [];
-    _appendBotMsg('你好，我是 Emo 回响，心事诉说，情绪皆有回响。\n\n有什么想跟我说的吗？');
+    _appendBotMsg("Hi, I'm Emo Echo. Share what's on your mind—your emotions will find their echo.\n\nIs there anything you'd like to tell me?");
   }
 
   // --- Send message ---
@@ -51,26 +51,33 @@
     if (!text || isSending) return;
 
     _appendUserMsg(text);
-    history.push({ role: 'user', content: text });
     inputEl.value = '';
     _autoResize();
     _setLoading(true);
 
     _sendToApi(text)
-      .then(function (reply) {
+      .then(function (data) {
+        const reply = data.reply;
         _setLoading(false);
         _appendBotMsg(reply);
-        history.push({ role: 'assistant', content: reply });
+        if (data.reply_source !== 'fallback') {
+          history.push({ role: 'user', content: text });
+          history.push({ role: 'assistant', content: reply });
+        } else {
+          console.warn('[emo_echo] fallback:', data.error_code);
+        }
         if (history.length > 20) history = history.slice(-20);
       })
       .catch(function (err) {
         console.error('[emo_echo]', err);
         _setLoading(false);
-        _appendBotMsg(_t('echo.fallback', '抱歉，我现在有点走神了，等一下再试试吧。'));
+        _appendBotMsg("I'm here with you, and I'm listening. Would you like to tell me a little more about what's on your mind?");
       });
   }
 
   function _getParticipantCode() {
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    if (user && user.username) return user.username;
     try {
       const raw = localStorage.getItem('emomirror.participant');
       if (raw) {
@@ -78,11 +85,11 @@
         if (p && p.participant_code) return p.participant_code;
       }
     } catch (e) {}
-    return localStorage.getItem('participant_code') || 'local';
+    try { return localStorage.getItem('participant_code') || 'local'; } catch (e) { return 'local'; }
   }
 
   async function _sendToApi(message) {
-    const token = localStorage.getItem('auth_token') || '';
+    const token = typeof Auth !== 'undefined' ? Auth.getToken() : '';
     const participantCode = _getParticipantCode();
 
     const payload = {
@@ -102,10 +109,13 @@
     });
 
     if (!res.ok) {
-      throw new Error('API error ' + res.status);
+      const data = await res.json().catch(() => ({}));
+      const detail = data.detail || {};
+      throw new Error(detail.message || (typeof detail === 'string' ? detail : 'API error ' + res.status));
     }
     const data = await res.json();
-    return data.reply || '嗯，我在这里。';
+    if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('Empty model response');
+    return data;
   }
 
   // --- DOM helpers ---
@@ -139,6 +149,8 @@
   function _setLoading(loading) {
     isSending = loading;
     sendBtn.disabled = loading;
+    clearBtn.disabled = loading;
+    historyBtn.disabled = loading;
     typingEl.style.display = loading ? 'flex' : 'none';
     if (loading) _scrollToBottom();
   }
@@ -155,6 +167,7 @@
   }
 
   function _clearChat() {
+    if (isSending) return;
     sessionId = _newSessionId();
     history = [];
     messagesEl.innerHTML = '';
@@ -165,7 +178,7 @@
   // --- History ---
   function _openHistory() {
     historyPanel.style.display = 'block';
-    sessionListEl.innerHTML = '<p class="echo-history-empty">加载中…</p>';
+    sessionListEl.innerHTML = '<p class="echo-history-empty">' + _t('echo.historyLoading', 'Loading…') + '</p>';
     _loadHistory();
   }
 
@@ -174,7 +187,7 @@
   }
 
   async function _loadHistory() {
-    const token = localStorage.getItem('auth_token') || '';
+    const token = typeof Auth !== 'undefined' ? Auth.getToken() : '';
     const participantCode = _getParticipantCode();
     const headers = {};
     if (token) headers['Authorization'] = 'Bearer ' + token;
@@ -194,14 +207,14 @@
       sessionListEl.innerHTML = '<p class="echo-history-empty">' + _t('echo.historyEmpty', '还没有历史对话记录。') + '</p>';
       return;
     }
-    const lang = (typeof SharedI18N !== 'undefined') ? SharedI18N.lang() : 'zh';
+    const lang = (typeof SharedI18N !== 'undefined') ? SharedI18N.lang() : 'en';
     const locale = lang === 'en' ? 'en-US' : 'zh-CN';
     sessionListEl.innerHTML = '';
     sessions.forEach(function (s) {
       const d = new Date(s.last_active_at || s.created_at);
       const dateStr = d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
       const timeStr = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-      const preview = s.preview || '(空对话)';
+      const preview = s.preview || '(Empty chat)';
       const count = s.message_count || 0;
       const item = document.createElement('div');
       item.className = 'echo-session-item';
@@ -214,6 +227,7 @@
   }
 
   function _restoreSession(s) {
+    if (isSending) return;
     const msgs = s.messages || [];
     sessionId = s.session_uuid;
     messagesEl.innerHTML = '';
@@ -238,6 +252,8 @@
   }
 
   function _getUserInitial() {
+    const user = typeof Auth !== 'undefined' ? Auth.getUser() : null;
+    if (user) return (user.display_name || user.username || 'U').charAt(0).toUpperCase();
     try {
       const raw = localStorage.getItem('user_info');
       if (raw) {
@@ -246,7 +262,7 @@
         if (name) return name.charAt(0).toUpperCase();
       }
     } catch (e) { /* ignore */ }
-    return '我';
+    return 'U';
   }
 
   function _timeStr() {
