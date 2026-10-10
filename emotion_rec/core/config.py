@@ -12,6 +12,17 @@ from pathlib import Path
 
 PACKAGE_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = PACKAGE_DIR.parent
+
+# Explicit paths keep local configuration working with both supported start
+# commands. Environment variables supplied by the host always take precedence.
+try:
+    from dotenv import load_dotenv
+except ImportError:  # Optional when using only host environment variables.
+    pass
+else:
+    load_dotenv(PROJECT_ROOT / ".env", override=False)
+    load_dotenv(PACKAGE_DIR / ".env", override=False)
+
 STATIC_DIR = PACKAGE_DIR / "static"
 SHARED_DIR = PACKAGE_DIR / "shared"
 MODELS_DIR = PACKAGE_DIR / "models"

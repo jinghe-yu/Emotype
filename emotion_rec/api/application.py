@@ -9,6 +9,7 @@ from fastapi import FastAPI, UploadFile, File, Form, Header, Query, HTTPExceptio
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 
 try:
     from emotion_rec.api.schemas import (
@@ -84,7 +85,8 @@ try:
         list_echo_sessions,
         get_echo_context,
     )
-    from emotion_rec.services import audio_emotion
+    from emotion_rec.services import audio_emotion, emo_echo
+    from emotion_rec.persistence.repository import save_echo_turn
 except ModuleNotFoundError:
     from api.schemas import (  # type: ignore
         BodySensationAdviceRequest,
@@ -156,14 +158,15 @@ except ModuleNotFoundError:
         list_echo_sessions,
         get_echo_context,
     )
-    from services import audio_emotion  # type: ignore
+    from services import audio_emotion, emo_echo  # type: ignore
+    from persistence.repository import save_echo_turn  # type: ignore
 
 # -----------------------------
 # LLM Configuration
 # -----------------------------
 # All LLM traffic goes through emotion_rec/llm_client.py, which uses the OpenAI
 # SDK pointed at DeepSeek. Configure via DEEPSEEK_API_KEY/DEEPSEEK_MODEL, or the
-# legacy LLM_API_KEY/LLM_MODEL aliases. Default model is deepseek-v4-flash.
+# legacy LLM_API_KEY/LLM_MODEL aliases. Default model is deepseek-flash.
 try:
     LLM_TYPOGRAPHY_TEMPERATURE = float(os.getenv("LLM_TYPOGRAPHY_TEMPERATURE", "0.6"))
 except ValueError:
@@ -256,6 +259,7 @@ def healthz():
         "model_loaded": audio_emotion.model_loaded(),
         "llm_configured": llm_client.llm_enabled(),
         "llm_model": llm_client.default_model(),
+        "llm_status": llm_client.configuration_status(),
     }
 
 
@@ -1436,6 +1440,8 @@ async def save_diary_entry(
     try:
         payload_data = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
         code = _resolve_code(user, payload.participant_code)
+        # First-time visitors can save a Journal without a separate research session.
+        get_or_create_participant(code)
         entry = create_diary_entry(code, payload_data)
         return {"status": "success", "diary_entry": entry}
     except Exception as error:
@@ -1809,7 +1815,10 @@ def process_typography_request(text: str, vad: dict, acoustics: dict):
 
 
 @app.post("/body-sensation/advice")
-async def body_sensation_advice(payload: BodySensationAdviceRequest):
+async def body_sensation_advice(
+    payload: BodySensationAdviceRequest,
+    user: dict | None = Depends(_get_optional_user),
+):
     try:
         from emotion_rec.services.body_sensation import generate_body_sensation_advice
     except ModuleNotFoundError:
@@ -1817,7 +1826,8 @@ async def body_sensation_advice(payload: BodySensationAdviceRequest):
 
     try:
         payload_data = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
-        result = generate_body_sensation_advice(payload_data)
+        payload_data["participant_code"] = _resolve_code(user, payload.participant_code)
+        result = await run_in_threadpool(generate_body_sensation_advice, payload_data)
         return Response(
             content=json.dumps(result, ensure_ascii=False),
             media_type="application/json; charset=utf-8",
@@ -1826,7 +1836,7 @@ async def body_sensation_advice(payload: BodySensationAdviceRequest):
         print(f"[body_sensation] endpoint failed: {error}")
         return {
             "status": "error",
-            "message": str(error),
+            "message": "Body Sense is temporarily unavailable. Please try again.",
             "body_sensation": {
                 "selected_regions": [],
                 "symptoms": [],
@@ -1835,15 +1845,15 @@ async def body_sensation_advice(payload: BodySensationAdviceRequest):
             "possible_links": [],
             "advice": {
                 "source": "error_fallback",
-                "title": "暂时无法生成身体感受建议",
-                "summary": "后端处理时遇到问题，但这不影响你继续记录情绪日记。",
+                "title": "Body advice is temporarily unavailable",
+                "summary": "We could not process this request. You can still keep a journal.",
                 "steps": [
-                    "先记录症状出现的时间、持续多久、强度变化。",
-                    "如果症状明显或持续加重，请优先寻求专业医疗帮助。",
+                    "Record when the sensation started, how long it lasted, and changes in intensity.",
+                    "Seek professional medical help if symptoms are significant or worsening.",
                 ],
-                "reflection_prompt": "可以稍后再试一次，或补充更多关于睡眠、饮食、咖啡因和压力事件的信息。",
+                "reflection_prompt": "Try again later, or add context about sleep, meals, caffeine and stressful events.",
                 "when_to_seek_help": [
-                    "胸痛、呼吸困难、晕厥、剧烈头痛、麻木无力、血便或高烧时，请及时就医。"
+                    "Seek urgent medical help for chest pain, difficulty breathing, fainting, severe headache, weakness or numbness, bloody stools or high fever."
                 ],
                 "not_medical_diagnosis": True,
             },
@@ -1989,7 +1999,7 @@ def _get_whisper_pipeline():
                 "automatic-speech-recognition",
                 model="openai/whisper-tiny",
                 chunk_length_s=30,
-                generate_kwargs={"language": "chinese", "task": "transcribe"},
+                generate_kwargs={"task": "transcribe"},
             )
         except Exception:
             _whisper_pipeline = None
@@ -2146,17 +2156,7 @@ async def predict(
 # Emo Echo Chat API
 # -----------------------------
 
-_EMO_ECHO_SYSTEM_PROMPT = """你是「Emo 回响」，EmoBridge 情感陪伴助手。
-你的角色是温柔、真诚的情绪倾听者，像一位有见识的朋友，不是心理医生。
-
-规则：
-- 语气温暖、口语化，不过度正式
-- 多使用「好像」「看起来」「也许」等，不轻易下结论
-- 不做诊断、不评判、不建议停药或替代专业帮助
-- 可以结合用户最近的日记或随手记轻轻呼应，但不要生硬引用
-- 每次回复控制在 3-5 句，不要长篇大论
-- 适当提出一个温柔的开放性问题，引导用户继续诉说
-- 开场白：你好，我是 Emo 回响，心事诉说，情绪皆有回响。"""
+_EMO_ECHO_SYSTEM_PROMPT = emo_echo.SYSTEM_PROMPT
 
 
 @app.get("/api/emo-echo/sessions")
@@ -2166,10 +2166,10 @@ async def emo_echo_sessions(
 ):
     code = _resolve_code(user, participant_code)
     try:
-        sessions = list_echo_sessions(code)
+        sessions = await run_in_threadpool(list_echo_sessions, code)
         return {"status": "success", "sessions": sessions}
     except Exception as e:
-        return {"status": "success", "sessions": []}
+        raise HTTPException(503, detail="Chat history is temporarily unavailable.") from e
 
 
 @app.post("/api/emo-echo/chat")
@@ -2179,59 +2179,37 @@ async def emo_echo_chat(
 ):
     code = _resolve_code(user, payload.participant_code)
 
-    # get or create session in db
+    message = payload.message.strip()
+    if not message:
+        raise HTTPException(422, detail="Message must not be blank.")
+    language = emo_echo.reply_language(message, payload.history)
     try:
-        session_info = get_or_create_echo_session(code, payload.session_id)
+        session_info = await run_in_threadpool(get_or_create_echo_session, code, payload.session_id)
         session_db_id = session_info["id"]
+    except ValueError as e:
+        raise HTTPException(403, detail="This chat session is not available to this user.") from e
     except Exception as e:
-        print(f"[emo_echo] session error: {e}")
-        session_db_id = None
+        raise HTTPException(503, detail="Chat storage is temporarily unavailable.") from e
 
     # build context from last 15 days of user data
-    context_text = ""
     try:
-        context_text = get_echo_context(code, days=15)
+        context_text = await run_in_threadpool(get_echo_context, code, days=15)
     except Exception as e:
-        print(f"[emo_echo] context error: {e}")
-
-    system_content = _EMO_ECHO_SYSTEM_PROMPT
-    if context_text:
-        system_content += f"\n\n以下是用户最近 15 天的情绪记录，供你参考（请勿机械引用）：\n{context_text}"
-
-    # build messages for LLM
-    messages = [{"role": "system", "content": system_content}]
-    for h in payload.history[-10:]:
-        role = h.get("role", "")
-        content = str(h.get("content", "")).strip()
-        if role in ("user", "assistant") and content:
-            messages.append({"role": role, "content": content})
-    messages.append({"role": "user", "content": payload.message})
-
-    # call LLM
-    reply = None
-    if not llm_client.llm_enabled():
-        print("[emo_echo] LLM unavailable: DEEPSEEK_API_KEY is missing or LLM_ENABLED is disabled.")
-    else:
-        try:
-            reply = llm_client.chat(messages, temperature=0.72, max_tokens=512)
-            if reply:
-                reply = llm_client.strip_content(reply)
-        except Exception as e:
-            print(f"[emo_echo] llm error: {e}")
-
-    if not reply:
-        print(f"[emo_echo] using fallback reply; model={llm_client.default_model()}")
-        reply = "嗯，我在这里。你说的，我都在认真听。可以多讲一点吗？"
-
-    # persist messages
-    if session_db_id is not None:
-        try:
-            save_echo_message(session_db_id, "user", payload.message)
-            save_echo_message(session_db_id, "assistant", reply)
-        except Exception as e:
-            print(f"[emo_echo] save message error: {e}")
-
-    return {"reply": reply, "session_id": payload.session_id}
+        raise HTTPException(503, detail="Recent records could not be loaded. Please try again.") from e
+    try:
+        reply = await run_in_threadpool(emo_echo.generate_reply, message, payload.history, context_text)
+    except llm_client.LLMError as e:
+        return {"reply": emo_echo.fallback_reply(message), "session_id": payload.session_id,
+                "reply_source": "fallback", "error_code": e.code, "language": "en",
+                "context_loaded": bool(context_text), "saved": False}
+    saved = True
+    try:
+        await run_in_threadpool(save_echo_turn, session_db_id, message, reply)
+    except Exception as e:
+        print(f"[emo_echo] turn persistence failed: {type(e).__name__}")
+        saved = False
+    return {"reply": reply, "session_id": payload.session_id, "reply_source": "model",
+            "language": language, "context_loaded": bool(context_text), "saved": saved}
 
 
 if __name__ == "__main__":

@@ -173,7 +173,7 @@ class UserSettings(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
-    language: Mapped[str] = mapped_column(String(8), default="zh-CN")
+    language: Mapped[str] = mapped_column(String(8), default="en")
     theme: Mapped[str] = mapped_column(String(32), default="warm")
     preferences_json: Mapped[Any] = mapped_column(JSON, default=dict)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: now_utc())
@@ -339,7 +339,7 @@ def _ensure_sqlite_user_schema() -> None:
         existing = {column["name"] for column in inspector.get_columns("user_settings")}
         column_sql = {
             "user_id": "INTEGER",
-            "language": "VARCHAR(8) DEFAULT 'zh-CN'",
+            "language": "VARCHAR(8) DEFAULT 'en'",
             "theme": "VARCHAR(32) DEFAULT 'warm'",
             "preferences_json": "JSON",
             "updated_at": "DATETIME",
@@ -455,7 +455,7 @@ def list_diary_entries(participant_code: str) -> list[dict[str, Any]]:
     with SessionLocal() as session:
         participant = _participant_by_code(session, participant_code)
         if participant is None:
-            raise ValueError("Participant not found.")
+            return []
         rows = session.execute(
             select(DiaryEntry)
             .where(DiaryEntry.participant_id == participant.id)
@@ -1265,8 +1265,8 @@ def _usage_event_review_record(event: UsageEvent) -> dict[str, Any] | None:
         regions = _review_list(metadata.get("selected_regions"))
         symptom_labels = _labels_from_body_items(symptoms)
         region_labels = _labels_from_body_items(regions)
-        parts = [item for item in ("、".join(region_labels), "、".join(symptom_labels)) if item]
-        summary = "身体感受：" + ("；".join(parts) if parts else "已生成身体感受建议")
+        parts = [item for item in (", ".join(region_labels), ", ".join(symptom_labels)) if item]
+        summary = "Body Sense: " + ("; ".join(parts) if parts else "Advice generated")
         body_signals = _dedupe_texts(symptom_labels, 12)
         return {
             "source": "body_sensation",
@@ -1831,12 +1831,12 @@ def usage_event_to_diary_context(event: UsageEvent) -> dict[str, Any] | None:
         regions = metadata.get("selected_regions") or []
         symptom_labels = [str(item.get("label") or item.get("id") or "") for item in symptoms if isinstance(item, dict)]
         region_labels = [str(item.get("label") or item.get("id") or "") for item in regions if isinstance(item, dict)]
-        parts = [item for item in ["、".join(region_labels), "、".join(symptom_labels)] if item]
+        parts = [item for item in [", ".join(region_labels), ", ".join(symptom_labels)] if item]
         return {
             "source": "body_sensation",
             "id": event.id,
             "time": created_at,
-            "summary": "身体感受：" + ("；".join(parts) if parts else "已生成身体感受建议"),
+            "summary": "Body Sense: " + ("; ".join(parts) if parts else "Advice generated"),
             "valence": optional_float(metadata.get("valence")),
             "arousal": optional_float(metadata.get("arousal")),
             "primary_emotion": metadata.get("primary_label") or "身体感受",
@@ -2183,6 +2183,8 @@ def get_or_create_echo_session(participant_code: str, session_uuid: str) -> dict
             select(EchoSession).where(EchoSession.session_uuid == session_uuid)
         ).scalar_one_or_none()
         if existing:
+            if existing.participant_id != participant.id:
+                raise ValueError("Echo session belongs to another participant")
             existing.last_active_at = now_utc()
             session.commit()
             session.refresh(existing)
@@ -2268,15 +2270,15 @@ def list_echo_sessions(participant_code: str, limit: int = 30) -> list[dict[str,
 
 
 def get_echo_context(participant_code: str, days: int = 15) -> str:
-    """Build a compact text summary of the user's recent records for LLM context."""
+    """Bounded, dated, participant-scoped data from all three record sources."""
     from datetime import date as date_cls, timedelta
     code = normalize_participant_code(participant_code or "local")
     end = date_cls.today()
-    start = end - timedelta(days=days)
+    start = end - timedelta(days=max(1, days) - 1)
     start_str = start.isoformat()
     end_str = end.isoformat()
 
-    lines: list[str] = []
+    context: dict[str, Any] = {"journals": [], "diaries": [], "body_sense": []}
     with SessionLocal() as session:
         participant = _participant_by_code(session, code)
         if participant is None:
@@ -2295,32 +2297,32 @@ def get_echo_context(participant_code: str, days: int = 15) -> str:
             .limit(10)
         ).scalars().all()
 
-        if diaries:
-            lines.append("【最近日记摘要】")
-            for d in diaries:
-                emotion = d.primary_emotion or ""
-                preview = (d.content or "")[:100].replace("\n", " ")
-                lines.append(f"- {d.diary_date} 情绪:{emotion} 内容:{preview}…")
+        for d in diaries:
+            context["diaries"].append({
+                "date": d.diary_date, "title": (d.title or "")[:120],
+                "text": (d.content or "")[:500], "inferred_emotion": d.primary_emotion,
+            })
 
         # --- Diary entries (随手记) ---
-        cutoff_dt = datetime(end.year, end.month, end.day, 23, 59, 59, tzinfo=timezone.utc) - timedelta(days=days)
+        cutoff_dt = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+        until_dt = datetime(end.year, end.month, end.day, tzinfo=timezone.utc) + timedelta(days=1)
         entries = session.execute(
             select(DiaryEntry)
             .where(
                 DiaryEntry.participant_id == participant.id,
                 DiaryEntry.created_at >= cutoff_dt,
+                DiaryEntry.created_at < until_dt,
             )
             .order_by(DiaryEntry.created_at.desc())
-            .limit(20)
+            .limit(10)
         ).scalars().all()
 
-        if entries:
-            lines.append("【最近随手记】")
-            for e in entries:
-                label = e.final_label or e.original_label or ""
-                text = (e.raw_text or e.transcript_text or "")[:80].replace("\n", " ")
-                date_str = isoformat(e.created_at)[:10] if e.created_at else ""
-                lines.append(f"- {date_str} 情绪:{label} 内容:{text}…")
+        for e in entries:
+            context["journals"].append({
+                "date": isoformat(e.created_at),
+                "text": (e.raw_text or e.transcript_text or "")[:400],
+                "user_label": e.final_label, "inferred_emotion": e.original_label,
+            })
 
         # --- Body sensation advice events (身体感受) ---
         body_events = session.execute(
@@ -2329,23 +2331,36 @@ def get_echo_context(participant_code: str, days: int = 15) -> str:
                 UsageEvent.participant_id == participant.id,
                 UsageEvent.event_type == "body_sensation_advice",
                 UsageEvent.created_at >= cutoff_dt,
+                UsageEvent.created_at < until_dt,
             )
             .order_by(UsageEvent.created_at.desc())
-            .limit(10)
+            .limit(6)
         ).scalars().all()
 
-        if body_events:
-            lines.append("【最近身体感受】")
-            for ev in body_events:
-                meta = ev.metadata_json if isinstance(ev.metadata_json, dict) else {}
-                symptoms = [str(s.get("label") or s.get("id") or "") for s in (meta.get("symptoms") or []) if isinstance(s, dict)]
-                regions = [str(r.get("label") or r.get("id") or "") for r in (meta.get("selected_regions") or []) if isinstance(r, dict)]
-                date_str = isoformat(ev.created_at)[:10] if ev.created_at else ""
-                parts = []
-                if regions:
-                    parts.append("部位:" + "、".join(regions))
-                if symptoms:
-                    parts.append("感受:" + "、".join(symptoms))
-                lines.append(f"- {date_str} {' '.join(parts)}")
+        for ev in body_events:
+            meta = ev.metadata_json if isinstance(ev.metadata_json, dict) else {}
+            context["body_sense"].append({
+                "date": isoformat(ev.created_at),
+                "regions": [str(r.get("label") or r.get("id") or "")[:60]
+                            for r in (meta.get("selected_regions") or [])[:8] if isinstance(r, dict)],
+                "sensations": [{"label": str(s.get("label") or s.get("id") or "")[:80],
+                                "severity": s.get("severity"), "duration": str(s.get("duration") or "")[:80]}
+                               for s in (meta.get("symptoms") or [])[:8] if isinstance(s, dict)],
+                "notes": str(meta.get("free_text") or "")[:300],
+                "journal_context": str(meta.get("journal_text") or "")[:300],
+                "risk_level": meta.get("risk_level"),
+                "earlier_ai_summary": str((meta.get("advice") or {}).get("summary") or "")[:250]
+                    if isinstance(meta.get("advice"), dict) else "",
+            })
 
-    return "\n".join(lines)
+    return json.dumps(context, ensure_ascii=False) if any(context.values()) else ""
+
+
+def save_echo_turn(session_db_id: int, message: str, reply: str) -> None:
+    """Persist a successful model turn atomically, never a placeholder reply."""
+    with SessionLocal() as session:
+        session.add_all([
+            EchoMessage(session_id=session_db_id, role="user", content=message),
+            EchoMessage(session_id=session_db_id, role="assistant", content=reply),
+        ])
+        session.commit()

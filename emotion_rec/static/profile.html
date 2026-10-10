@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>个人信息 | EmoBridge</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20260607a" />
-  <link rel="stylesheet" href="/static/profile.css?v=20260607a" />
+  <title data-ui-copy="个人信息 | EmoBridge">Profile | EmoBridge</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20261010a" />
+  <link rel="stylesheet" href="/static/profile.css?v=20261010a" />
 </head>
 <body>
 
@@ -18,13 +18,13 @@
       <img class="brand-name-img" src="/static/name-text.png" alt="emobridge" />
     </a>
     <nav class="view-tabs" aria-label="Primary navigation">
-      <a class="tab-button" href="/" data-i18n="nav.home">首页</a>
-      <a class="tab-button" href="/essay" data-i18n="nav.essay">情绪随笔</a>
-      <a class="tab-button" href="/body-sensation" data-i18n="nav.body">身体感受</a>
-      <a class="tab-button" href="/emo-echo" data-i18n="nav.ecoEcho">Emo 回响</a>
-      <a class="tab-button" href="/historyreview" data-i18n="nav.historyReview">历史回顾</a>
-      <a class="tab-button is-active" href="/profile" aria-current="page" id="profileTab" data-i18n="nav.profile">个人信息</a>
-      <a class="tab-button" href="/login" id="authTab" data-i18n="nav.login">登录</a>
+      <a class="tab-button" href="/" data-i18n="nav.home">Home</a>
+      <a class="tab-button" href="/essay" data-i18n="nav.essay">Journal</a>
+      <a class="tab-button" href="/body-sensation" data-i18n="nav.body">Body Sense</a>
+      <a class="tab-button" href="/emo-echo" data-i18n="nav.ecoEcho">Emo Echo</a>
+      <a class="tab-button" href="/historyreview" data-i18n="nav.historyReview">History</a>
+      <a class="tab-button is-active" href="/profile" aria-current="page" id="profileTab" data-i18n="nav.profile">Profile</a>
+      <a class="tab-button" href="/login" id="authTab" data-i18n="nav.login">Login</a>
     </nav>
     <div class="topbar-right">
     </div>
@@ -34,7 +34,7 @@
   <section class="profile-heading">
     <div>
       <p class="eyebrow" data-i18n="profile.eyebrow">My Profile</p>
-      <h1 data-i18n="profile.title">个人信息</h1>
+      <h1 data-i18n="profile.title">Profile</h1>
     </div>
   </section>
 
@@ -43,9 +43,9 @@
     <div class="profile-avatar" id="profileAvatar">?</div>
     <div class="profile-details">
       <h2 id="profileDisplayName">--</h2>
-      <p class="profile-meta" id="profileMeta">@-- · 注册于 --</p>
+      <p class="profile-meta" id="profileMeta" data-ui-copy="@-- · 注册于 --">@-- · Joined --</p>
       <div class="profile-role-badge">
-        <span class="status-pill" id="profileRole">用户</span>
+        <span class="status-pill" id="profileRole" data-ui-copy="用户">User</span>
       </div>
     </div>
   </section>
@@ -55,38 +55,38 @@
     <div class="section-head">
       <div>
         <p class="eyebrow" data-i18n="profile.settingsEyebrow">Settings</p>
-        <h2 data-i18n="profile.settingsTitle">账户设置</h2>
+        <h2 data-i18n="profile.settingsTitle">Account Settings</h2>
       </div>
     </div>
     <form id="profileSettingsForm">
       <label class="participant-code-control">
-        <span data-i18n="profile.displayName">显示名</span>
-        <input type="text" id="settingsDisplayName" data-i18n-placeholder="profile.displayNamePh" placeholder="修改显示名" autocomplete="name" />
+        <span data-i18n="profile.displayName">Display Name</span>
+        <input type="text" id="settingsDisplayName" data-i18n-placeholder="profile.displayNamePh" placeholder="Change display name" data-ui-placeholder="修改显示名" autocomplete="name" />
       </label>
       <label class="participant-code-control">
-        <span data-i18n="profile.currentPw">当前密码</span>
-        <input type="password" id="settingsCurrentPassword" data-i18n-placeholder="profile.currentPwPh" placeholder="输入当前密码以修改" autocomplete="current-password" />
+        <span data-i18n="profile.currentPw">Current Password</span>
+        <input type="password" id="settingsCurrentPassword" data-i18n-placeholder="profile.currentPwPh" placeholder="Enter current password" data-ui-placeholder="输入当前密码以修改" autocomplete="current-password" />
       </label>
       <label class="participant-code-control">
-        <span data-i18n="profile.newPw">新密码</span>
-        <input type="password" id="settingsNewPassword" data-i18n-placeholder="profile.newPwPh" placeholder="输入新密码（至少4位）" autocomplete="new-password" />
+        <span data-i18n="profile.newPw">New Password</span>
+        <input type="password" id="settingsNewPassword" data-i18n-placeholder="profile.newPwPh" placeholder="Enter new password (min 4 chars)" data-ui-placeholder="输入新密码（至少4位）" autocomplete="new-password" />
       </label>
-      <button class="warm-btn primary" type="submit" data-i18n="profile.save">保存修改</button>
+      <button class="warm-btn primary" type="submit" data-i18n="profile.save">Save Changes</button>
     </form>
     <p class="profile-status" id="settingsStatus"></p>
     <!-- 偏好设置（即时生效，不需要保存按钮） -->
     <div class="profile-preferences">
       <label class="participant-code-control">
-        <span data-i18n="profile.lang">语言偏好</span>
+        <span data-i18n="profile.lang">Language</span>
         <select id="settingsLang">
-          <option value="zh">中文</option>
+          <option value="zh" data-ui-copy="中文">Chinese</option>
           <option value="en">English</option>
         </select>
       </label>
       <label class="participant-code-control privacy-toggle-setting">
         <input type="checkbox" id="settingsLocalMode" />
-        <span data-i18n="profile.localMode">本地模式</span>
-        <small data-i18n="profile.localModeHint" style="color:var(--muted);font-size:12px;margin-top:2px;">仅保存在本地浏览器，不同步到服务器</small>
+        <span data-i18n="profile.localMode">Local Mode</span>
+        <small data-i18n="profile.localModeHint" style="color:var(--muted);font-size:12px;margin-top:2px;">Save locally only, no server sync</small>
       </label>
     </div>
   </section>
@@ -96,15 +96,15 @@
     <div class="section-head">
       <div>
         <p class="eyebrow" data-i18n="profile.quickEyebrow">Quick Access</p>
-        <h2 data-i18n="profile.quickTitle">我的数据</h2>
+        <h2 data-i18n="profile.quickTitle">My Data</h2>
       </div>
     </div>
     <div class="profile-link-grid">
-      <a class="warm-btn ghost" href="/emo-echo">Emo 回响</a>
-      <a class="warm-btn ghost" href="/records" data-i18n="nav.records">历史记录</a>
-      <a class="warm-btn ghost" href="/review" data-i18n="nav.review">情绪复盘</a>
-      <a class="warm-btn ghost" href="/diary" data-i18n="nav.diaryBook">日记本</a>
-      <a class="warm-btn ghost" href="/body-sensation" data-i18n="nav.body">身体感受</a>
+      <a class="warm-btn ghost" href="/emo-echo" data-ui-copy="Emo 回响">Emo Echo</a>
+      <a class="warm-btn ghost" href="/records" data-i18n="nav.records">Records</a>
+      <a class="warm-btn ghost" href="/review" data-i18n="nav.review">Review</a>
+      <a class="warm-btn ghost" href="/diary" data-i18n="nav.diaryBook">Diary</a>
+      <a class="warm-btn ghost" href="/body-sensation" data-i18n="nav.body">Body Sense</a>
     </div>
   </section>
 
@@ -113,40 +113,40 @@
     <div class="section-head">
       <div>
         <p class="eyebrow" data-i18n="profile.adminEyebrow">Admin</p>
-        <h2 data-i18n="profile.adminTitle">用户管理</h2>
+        <h2 data-i18n="profile.adminTitle">User Management</h2>
       </div>
     </div>
     <table class="admin-user-table">
       <thead>
         <tr>
-          <th data-i18n="profile.thUsername">用户名</th>
-          <th data-i18n="profile.thDisplay">显示名</th>
-          <th data-i18n="profile.thRole">角色</th>
-          <th data-i18n="profile.thCreated">注册时间</th>
-          <th data-i18n="profile.thLastLogin">最后登录</th>
-          <th data-i18n="profile.thActions">操作</th>
+          <th data-i18n="profile.thUsername">Username</th>
+          <th data-i18n="profile.thDisplay">Display Name</th>
+          <th data-i18n="profile.thRole">Role</th>
+          <th data-i18n="profile.thCreated">Created</th>
+          <th data-i18n="profile.thLastLogin">Last Login</th>
+          <th data-i18n="profile.thActions">Actions</th>
         </tr>
       </thead>
       <tbody id="adminUsersBody">
-        <tr><td colspan="6">加载中...</td></tr>
+        <tr><td colspan="6" data-ui-copy="加载中...">Loading…</td></tr>
       </tbody>
     </table>
     <!-- Admin record viewer -->
     <div id="adminRecordView" class="admin-record-view" style="display:none">
       <div class="admin-record-header">
-        <h3 id="adminRecordTitle">用户记录</h3>
-        <button class="warm-btn ghost" type="button" id="adminRecordClose" data-i18n="profile.close">关闭</button>
+        <h3 id="adminRecordTitle" data-ui-copy="用户记录">User records</h3>
+        <button class="warm-btn ghost" type="button" id="adminRecordClose" data-i18n="profile.close">Close</button>
       </div>
       <table class="admin-user-table">
         <thead>
           <tr>
-            <th data-i18n="profile.thSource">来源</th>
-            <th data-i18n="profile.thDate">日期</th>
-            <th data-i18n="profile.thSummary">内容摘要</th>
+            <th data-i18n="profile.thSource">Source</th>
+            <th data-i18n="profile.thDate">Date</th>
+            <th data-i18n="profile.thSummary">Summary</th>
           </tr>
         </thead>
         <tbody id="adminRecordList">
-          <tr><td colspan="3">加载中...</td></tr>
+          <tr><td colspan="3" data-ui-copy="加载中...">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -154,8 +154,8 @@
 
 </main>
 
-<script src="/static/i18n.js?v=20260607a"></script>
-<script src="/static/auth.js?v=20260607a"></script>
-<script src="/static/profile.js?v=20260607a" defer></script>
+<script src="/static/i18n.js?v=20261010a"></script>
+<script src="/static/auth.js?v=20261010a"></script>
+<script src="/static/profile.js?v=20261010a" defer></script>
 </body>
 </html>

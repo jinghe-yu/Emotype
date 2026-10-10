@@ -31,7 +31,7 @@
     els.registerTab.classList.remove("is-active");
     els.loginForm.style.display = "";
     els.registerForm.style.display = "none";
-    els.welcomeText.innerHTML = "<h1>欢迎回来</h1><p>登录你的 EmoBridge 账户，继续情绪之旅</p>";
+    els.welcomeText.innerHTML = SharedI18N.pick("<h1>欢迎回来</h1><p>登录你的 EmoBridge 账户，继续情绪之旅</p>", "<h1>Welcome back</h1><p>Log in to EmoBridge to continue your emotional journey</p>");
     setStatus("");
   }
 
@@ -40,7 +40,7 @@
     els.loginTab.classList.remove("is-active");
     els.registerForm.style.display = "";
     els.loginForm.style.display = "none";
-    els.welcomeText.innerHTML = "<h1>创建新账户</h1><p>第一个注册的用户将自动成为管理员</p>";
+    els.welcomeText.innerHTML = SharedI18N.pick("<h1>创建新账户</h1><p>第一个注册的用户将自动成为管理员</p>", "<h1>Create an account</h1><p>The first registered user becomes the administrator</p>");
     setStatus("");
   }
 
@@ -53,10 +53,10 @@
     var username = els.loginUsername.value.trim();
     var password = els.loginPassword.value;
     if (!username || !password) {
-      setStatus("请输入用户名和密码。", "error");
+      setStatus(SharedI18N.pick("请输入用户名和密码。", "Enter your username and password."), "error");
       return;
     }
-    setStatus("正在登录...", "");
+    setStatus(SharedI18N.pick("正在登录...", "Logging in…"), "");
     fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -64,13 +64,13 @@
     })
       .then(function (res) {
         return res.json().then(function (data) {
-          if (!res.ok) throw new Error(data.detail || "登录失败");
+          if (!res.ok) throw new Error(data.detail || SharedI18N.pick("登录失败", "Login failed"));
           return data;
         });
       })
       .then(function (data) {
         Auth.saveAuth(data);
-        setStatus("登录成功！正在跳转...", "success");
+        setStatus(SharedI18N.pick("登录成功！正在跳转...", "Logged in. Redirecting…"), "success");
         setTimeout(function () {
           window.location.href = "/";
         }, 500);
@@ -87,10 +87,10 @@
     var password = els.regPassword.value;
     var displayName = els.regDisplayName.value.trim();
     if (!username || !password) {
-      setStatus("请输入用户名和密码。", "error");
+      setStatus(SharedI18N.pick("请输入用户名和密码。", "Enter your username and password."), "error");
       return;
     }
-    setStatus("正在注册...", "");
+    setStatus(SharedI18N.pick("正在注册...", "Creating account…"), "");
     fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -102,14 +102,14 @@
     })
       .then(function (res) {
         return res.json().then(function (data) {
-          if (!res.ok) throw new Error(data.detail || "注册失败");
+          if (!res.ok) throw new Error(data.detail || SharedI18N.pick("注册失败", "Registration failed"));
           return data;
         });
       })
       .then(function (data) {
         Auth.saveAuth(data);
-        var roleMsg = data.user.role === "admin" ? "（你已成为管理员）" : "";
-        setStatus("注册成功！" + roleMsg + " 正在跳转...", "success");
+        var roleMsg = data.user.role === "admin" ? SharedI18N.pick("（你已成为管理员）", " (You are the administrator)") : "";
+        setStatus(SharedI18N.pick("注册成功！", "Account created!") + roleMsg + SharedI18N.pick(" 正在跳转...", " Redirecting…"), "success");
         setTimeout(function () {
           window.location.href = "/";
         }, 800);

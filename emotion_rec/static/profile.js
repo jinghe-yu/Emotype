@@ -52,15 +52,15 @@
     var initial = (name || "?")[0].toUpperCase();
     els.avatar.textContent = initial;
     els.displayName.textContent = name;
-    els.meta.textContent = "@" + user.username + " · 注册于 " + formatDate(user.created_at);
-    els.role.textContent = user.role === "admin" ? "管理员" : "用户";
+    els.meta.textContent = "@" + user.username + SharedI18N.pick(" · 注册于 ", " · Joined ") + formatDate(user.created_at);
+    els.role.textContent = user.role === "admin" ? SharedI18N.pick("管理员", "Admin") : SharedI18N.pick("用户", "User");
     els.settingsDisplayName.value = user.display_name || "";
   }
 
   renderUserInfo(currentUser);
 
   // --- Language & Local Mode settings ---
-  var savedLang = localStorage.getItem("emomirror.lang") || "zh";
+  var savedLang = localStorage.getItem("emomirror.lang") === "zh" ? "zh" : "en";
   if (els.settingsLang) els.settingsLang.value = savedLang;
 
   if (els.settingsLang) {
@@ -93,7 +93,7 @@
   // Settings form
   els.form.addEventListener("submit", function (e) {
     e.preventDefault();
-    setSettingsStatus("保存中...", "");
+    setSettingsStatus(SharedI18N.pick("保存中...", "Saving…"), "");
 
     var promises = [];
     var newName = els.settingsDisplayName.value.trim();
@@ -124,7 +124,7 @@
     }
 
     if (promises.length === 0) {
-      setSettingsStatus("没有需要保存的修改。", "");
+      setSettingsStatus(SharedI18N.pick("没有需要保存的修改。", "No changes to save."), "");
       return;
     }
 
@@ -143,13 +143,13 @@
 
         els.settingsCurrentPassword.value = "";
         els.settingsNewPassword.value = "";
-        setSettingsStatus("保存成功！", "success");
+        setSettingsStatus(SharedI18N.pick("保存成功！", "Saved!"), "success");
         setTimeout(function () {
           setSettingsStatus("");
         }, 3000);
       })
       .catch(function (err) {
-        setSettingsStatus(err.message || "保存失败", "error");
+        setSettingsStatus(err.message || SharedI18N.pick("保存失败", "Could not save"), "error");
       });
   });
 
@@ -168,24 +168,24 @@
             "<td>" + u.username + "</td>" +
             "<td>" + (u.display_name || "-") + "</td>" +
             '<td><span class="status-pill">' +
-              (u.role === "admin" ? "管理员" : "用户") +
+              (u.role === "admin" ? SharedI18N.pick("管理员", "Admin") : SharedI18N.pick("用户", "User")) +
             "</span></td>" +
             "<td>" + formatDate(u.created_at) + "</td>" +
             "<td>" + formatDate(u.last_login_at) + "</td>" +
             '<td class="admin-action-cell">' +
-              '<button class="warm-btn ghost admin-view-btn" data-username="' + u.username + '">查看记录</button> ' +
-              '<button class="warm-btn ghost admin-export-json-btn" data-username="' + u.username + '">导出JSON</button> ' +
-              '<button class="warm-btn ghost admin-export-csv-btn" data-username="' + u.username + '">导出CSV</button>' +
+              '<button class="warm-btn ghost admin-view-btn" data-username="' + u.username + SharedI18N.pick('">查看记录</button> ', "\">View records</button> ") +
+              '<button class="warm-btn ghost admin-export-json-btn" data-username="' + u.username + SharedI18N.pick('">导出JSON</button> ', "\">Export JSON</button> ") +
+              '<button class="warm-btn ghost admin-export-csv-btn" data-username="' + u.username + SharedI18N.pick('">导出CSV</button>', "\">Export CSV</button>") +
             "</td>";
           els.adminUsersBody.appendChild(tr);
         });
         if (users.length === 0) {
-          els.adminUsersBody.innerHTML = '<tr><td colspan="6">暂无用户</td></tr>';
+          els.adminUsersBody.innerHTML = SharedI18N.pick('<tr><td colspan="6">暂无用户</td></tr>', "<tr><td colspan=\"6\">No users yet</td></tr>");
         }
       })
       .catch(function (err) {
         els.adminUsersBody.innerHTML =
-          '<tr><td colspan="6">加载失败: ' + err.message + "</td></tr>";
+          SharedI18N.pick('<tr><td colspan="6">加载失败: ', "<tr><td colspan=\"6\">Could not load: ") + err.message + "</td></tr>";
       });
 
     // Delegate clicks for admin action buttons
@@ -208,8 +208,8 @@
     // Admin record viewer
     function loadAdminRecords(username) {
       if (!els.adminRecordView) return;
-      els.adminRecordTitle.textContent = username + " 的记录";
-      els.adminRecordList.innerHTML = '<tr><td colspan="3">加载中...</td></tr>';
+      els.adminRecordTitle.textContent = username + SharedI18N.pick(" 的记录", "’s records");
+      els.adminRecordList.innerHTML = SharedI18N.pick('<tr><td colspan="3">加载中...</td></tr>', "<tr><td colspan=\"3\">Loading…</td></tr>");
       els.adminRecordView.style.display = "";
 
       Auth.apiJson("/api/admin/records?participant_code=" + encodeURIComponent(username))
@@ -217,7 +217,7 @@
           var records = data.records || [];
           els.adminRecordList.innerHTML = "";
           if (records.length === 0) {
-            els.adminRecordList.innerHTML = '<tr><td colspan="3">暂无记录</td></tr>';
+            els.adminRecordList.innerHTML = SharedI18N.pick('<tr><td colspan="3">暂无记录</td></tr>', "<tr><td colspan=\"3\">No records yet</td></tr>");
             return;
           }
           records.forEach(function (r) {
@@ -231,7 +231,7 @@
         })
         .catch(function (err) {
           els.adminRecordList.innerHTML =
-            '<tr><td colspan="3">加载失败: ' + err.message + "</td></tr>";
+            SharedI18N.pick('<tr><td colspan="3">加载失败: ', "<tr><td colspan=\"3\">Could not load: ") + err.message + "</td></tr>";
         });
     }
 

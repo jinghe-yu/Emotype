@@ -168,6 +168,8 @@ function setStatus(text) {
 }
 
 function participantCode() {
+  const user = window.Auth?.getUser();
+  if (user?.username) return user.username;
   return participant?.participant_code || "";
 }
 
@@ -181,6 +183,7 @@ function saveParticipant(nextParticipant) {
 }
 
 async function apiJson(url, options = {}) {
+  if (window.Auth?.apiJson) return window.Auth.apiJson(url, options);
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -212,7 +215,7 @@ function serverEntryToLocal(entry) {
     color: entry.final_color,
     quadrant: entry.va_mapping_json?.overall?.quadrant,
     confidence: Math.round(confidence * 100),
-    date: entry.created_at ? new Date(entry.created_at).toLocaleString() : "",
+    date: entry.created_at ? new Date(entry.created_at).toLocaleString(currentLang === "zh" ? "zh-CN" : "en-US") : "",
     synced: true,
   };
 }
@@ -733,7 +736,7 @@ function applyManualMapping(mapping = {}, options = {}) {
 
   currentOverallMapping = next;
   selectedLabel = next.label;
-  primaryEmotion.textContent = selectedLabel;
+  primaryEmotion.textContent = SharedI18N.label(selectedLabel);
   reflectionText.textContent = reflectionFor(next);
   confidenceMeter.style.width = `${Math.round((next.confidence || 0) * 100)}%`;
   emotionDot.style.background = next.color || palette.mauve;
@@ -780,7 +783,7 @@ function applyAnalysis(payload) {
   currentVAMapping = vaMapping;
   currentCandidates = buildEmotionCandidates(payload, overall, vaMapping);
   selectedLabel = emotion.primary;
-  primaryEmotion.textContent = selectedLabel;
+  primaryEmotion.textContent = SharedI18N.label(selectedLabel);
   reflectionText.textContent = emotion.reflection;
   confidenceMeter.style.width = `${Math.round((emotion.confidence || 0) * 100)}%`;
   emotionDot.style.background = emotion.color || palette.mauve;
@@ -809,7 +812,7 @@ function renderChips(activeLabel) {
     const button = document.createElement("button");
     button.className = `emotion-chip ${candidate.label === activeLabel ? "is-active" : ""}`;
     button.type = "button";
-    button.textContent = candidate.label;
+    button.textContent = SharedI18N.label(candidate.label);
     button.style.setProperty("--chip-color", candidate.color || vaMapper().NEUTRAL_COLOR);
     button.title = `V ${formatSigned(candidate.valence)} · A ${formatSigned(candidate.arousal)}`;
     button.addEventListener("click", () => {
@@ -894,17 +897,19 @@ function renderHome() {
 
   if (entries.length) {
     const latest = entries[0];
-    latestEmotion.textContent = latest.label;
-    latestConfidence.textContent = `${latest.confidence}% confidence`;
-    if (homeMirrorWord)    homeMirrorWord.textContent    = latest.label.split("/")[0].trim().toLowerCase();
+    if (latestEmotion) latestEmotion.textContent = SharedI18N.label(latest.label);
+    if (latestConfidence) latestConfidence.textContent = `${latest.confidence}% confidence`;
+    if (homeMirrorWord)    homeMirrorWord.textContent    = SharedI18N.label(latest.label || "中性").split("/")[0].trim().toLowerCase();
     if (homeMirrorCaption) homeMirrorCaption.textContent = latest.date;
   } else {
-    latestEmotion.textContent = currentLang === "zh" ? "中性" : "Neutral";
-    latestConfidence.textContent = currentLang === "zh" ? "等待输入" : "waiting for text";
+    if (latestEmotion) latestEmotion.textContent = currentLang === "zh" ? "中性" : "Neutral";
+    if (latestConfidence) latestConfidence.textContent = currentLang === "zh" ? "等待输入" : "waiting for text";
     if (homeMirrorWord)    homeMirrorWord.textContent    = "steady";
     if (homeMirrorCaption) homeMirrorCaption.textContent = "No entry yet today";
   }
 
+  // The standalone Journal page shares this script but has no Home widgets.
+  if (!entryList) return;
   entryList.textContent = "";
   if (!entries.length) {
     const empty = document.createElement("p");
@@ -923,7 +928,7 @@ function renderHome() {
     const title = document.createElement("strong");
     title.style.display = "flex";
     title.style.alignItems = "flex-start";
-    title.append(dot, entry.label || "中性");
+    title.append(dot, SharedI18N.label(entry.label || "中性"));
     const copy = document.createElement("p");
     copy.textContent = entry.text || "";
     const date = document.createElement("small");
@@ -951,7 +956,7 @@ async function saveCurrentEntry() {
     color: mapping.color,
     quadrant: mapping.quadrant,
     confidence,
-    date: new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date()),
+    date: new Intl.DateTimeFormat(currentLang === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date()),
     synced: false,
   };
 
@@ -1009,7 +1014,7 @@ async function _transcribeJournalWithServer(blob) {
   const fd = new FormData();
   fd.append("file", blob, "audio.webm");
   try {
-    voiceButton.textContent = "识别中…";
+    voiceButton.textContent = SharedI18N.pick("识别中…", "Transcribing…");
     const res = await fetch("/api/transcribe", { method: "POST", body: fd });
     if (!res.ok) throw new Error(await res.text());
     const { text } = await res.json();
@@ -1019,9 +1024,9 @@ async function _transcribeJournalWithServer(blob) {
       scheduleAnalysis();
     }
   } catch (err) {
-    setStatus("识别失败，请重试");
+    setStatus(SharedI18N.pick("识别失败，请重试", "Transcription failed. Please try again."));
   } finally {
-    voiceButton.textContent = "开始语音";
+    voiceButton.textContent = SharedI18N.pick("开始语音", "Start voice");
     voiceMode.classList.remove("is-active");
     typingMode.classList.add("is-active");
     isListening = false;
@@ -1031,15 +1036,15 @@ async function _transcribeJournalWithServer(blob) {
 function setupSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    voiceButton.textContent = "开始录音";
-    voiceButton.title = "浏览器不支持实时语音识别，将录音后上传识别";
+    voiceButton.textContent = SharedI18N.pick("开始录音", "Start recording");
+    voiceButton.title = SharedI18N.pick("浏览器不支持实时语音识别，将录音后上传识别", "Live transcription is unavailable in this browser. Audio will be uploaded for transcription.");
     return;
   }
 
   recognition = new SpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
-  recognition.lang = "zh-CN";
+  recognition.lang = currentLang === "zh" ? "zh-CN" : "en-US";
 
   recognition.onresult = (event) => {
     let finalText = "";
@@ -1054,26 +1059,26 @@ function setupSpeechRecognition() {
       journalText.value += `${spacer}${finalText.trim()}`;
       scheduleAnalysis();
     }
-    setStatus(interimText ? "正在听写…" : "语音已捕获");
+    setStatus(interimText ? SharedI18N.pick("正在听写…", "Listening…") : SharedI18N.pick("语音已捕获", "Voice captured"));
   };
 
   recognition.onend = () => {
     isListening = false;
-    voiceButton.textContent = "开始语音";
+    voiceButton.textContent = SharedI18N.pick("开始语音", "Start voice");
     typingMode.classList.add("is-active");
     voiceMode.classList.remove("is-active");
   };
 
   recognition.onerror = (event) => {
     isListening = false;
-    voiceButton.textContent = "开始语音";
+    voiceButton.textContent = SharedI18N.pick("开始语音", "Start voice");
     const msgs = {
-      "not-allowed": "请在浏览器中允许麦克风权限，然后重试",
-      "network": "语音识别需要网络连接（使用 Google 服务），请检查网络",
-      "no-speech": "没有检测到语音，请靠近麦克风重试",
-      "audio-capture": "麦克风不可用，请检查设备",
+      "not-allowed": SharedI18N.pick("请在浏览器中允许麦克风权限，然后重试", "Allow microphone access in your browser, then try again."),
+      "network": SharedI18N.pick("语音识别需要网络连接（使用 Google 服务），请检查网络", "Speech recognition needs a connection to Google's service. Please check your network."),
+      "no-speech": SharedI18N.pick("没有检测到语音，请靠近麦克风重试", "No speech detected. Move closer to the microphone and try again."),
+      "audio-capture": SharedI18N.pick("麦克风不可用，请检查设备", "Microphone unavailable. Please check your device."),
     };
-    setStatus(msgs[event.error] || "语音识别出错，请重试");
+    setStatus(msgs[event.error] || SharedI18N.pick("语音识别出错，请重试", "Speech recognition failed. Please try again."));
   };
 }
 
@@ -1087,15 +1092,15 @@ function toggleVoice() {
   // Prefer Web Speech API
   if (recognition) {
     isListening = true;
-    voiceButton.textContent = "停止语音";
+    voiceButton.textContent = SharedI18N.pick("停止语音", "Stop voice");
     typingMode.classList.remove("is-active");
     voiceMode.classList.add("is-active");
     try {
       recognition.start();
     } catch (error) {
       isListening = false;
-      voiceButton.textContent = "开始语音";
-      setStatus("语音启动失败，请重试");
+      voiceButton.textContent = SharedI18N.pick("开始语音", "Start voice");
+      setStatus(SharedI18N.pick("语音启动失败，请重试", "Could not start voice input. Please try again."));
     }
     return;
   }
@@ -1104,7 +1109,7 @@ function toggleVoice() {
   navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
     isListening = true;
     mediaChunks = [];
-    voiceButton.textContent = "停止录音";
+    voiceButton.textContent = SharedI18N.pick("停止录音", "Stop recording");
     typingMode.classList.remove("is-active");
     voiceMode.classList.add("is-active");
     mediaRecorder = new MediaRecorder(stream);
@@ -1116,7 +1121,7 @@ function toggleVoice() {
     };
     mediaRecorder.start();
   }).catch(() => {
-    setStatus("麦克风权限被拒绝，请在浏览器设置中允许");
+    setStatus(SharedI18N.pick("麦克风权限被拒绝，请在浏览器设置中允许", "Microphone access denied. Please allow it in your browser settings."));
   });
 }
 
@@ -1157,7 +1162,7 @@ function bindEvents() {
 
   journalText.addEventListener("input", scheduleAnalysis);
   intensityRange.addEventListener("input", () => {
-    homeIntensity.textContent = `${intensityRange.value}%`;
+    if (homeIntensity) homeIntensity.textContent = `${intensityRange.value}%`;
     if (currentOverallMapping) {
       renderTypography(journalText.value, recolorDesign(currentDesign, currentOverallMapping), currentVAMapping);
     } else {
@@ -1331,13 +1336,14 @@ const I18N = {
   }
 };
 
-let currentLang = localStorage.getItem("emomirror.lang") || "zh";
+let currentLang = SharedI18N.lang();
 
 function t(key) {
-  return (I18N[currentLang] || I18N.zh)[key] || (I18N.zh)[key] || key;
+  return (I18N[currentLang] || I18N.en)[key] || SharedI18N.t(key);
 }
 
 function applyI18n() {
+  SharedI18N.apply();
   document.documentElement.lang = currentLang === "zh" ? "zh-CN" : "en";
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.dataset.i18n;
@@ -1563,8 +1569,8 @@ async function submitBodyAdvice() {
   const payload = {
     participant_code: bodyParticipantCode() || "local",
     journal_text: (document.getElementById("bodyJournalText") || {}).value || (document.getElementById("journalText") || {}).value || "",
-    selected_regions: [...new Map(bodyPairs.map((p) => [p.region.id, { id: p.region.id, label: p.region.zh }])).values()],
-    symptoms: bodyPairs.map((p) => ({ region_id: p.region.id, label: p.symptom.zh, severity: p.severity, duration: p.duration })),
+    selected_regions: [...new Map(bodyPairs.map((p) => [p.region.id, { id: p.region.id, label: bodyLabel(p.region) }])).values()],
+    symptoms: bodyPairs.map((p) => ({ id: p.symptom.id, region_id: p.region.id, label: bodyLabel(p.symptom), severity: p.severity, duration: p.duration })),
     free_text: (document.getElementById("bodyFreeText") || {}).value || "",
     include_recent_diaries: true,
     recent_diary_limit: 5,
@@ -1692,7 +1698,7 @@ function renderEmotionChart() {
   emotionChartInst = new Chart(canvas, {
     type: "bar",
     data: {
-      labels: sorted.map(([l]) => l),
+      labels: sorted.map(([l]) => SharedI18N.label(l)),
       datasets: [{
         data: sorted.map(([, c]) => c),
         backgroundColor: COLORS.slice(0, sorted.length),

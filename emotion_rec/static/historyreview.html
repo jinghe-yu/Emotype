@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>历史回顾 | EmoBridge</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20260607a" />
-  <link rel="stylesheet" href="/static/records.css?v=20260607a" />
+  <title data-ui-copy="历史回顾 | EmoBridge">History | EmoBridge</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20261010a" />
+  <link rel="stylesheet" href="/static/records.css?v=20261010a" />
 </head>
 <body class="records-page">
 
@@ -27,26 +27,26 @@
 
   <!-- TOPBAR -->
   <header class="topbar records-topbar">
-    <a class="brand-mark" href="/" aria-label="EmoBridge 首页">
+    <a class="brand-mark" href="/" aria-label="EmoBridge home" data-ui-aria-label="EmoBridge 首页">
       <img class="brand-icon2" src="/static/icon2-only.png" alt="" aria-hidden="true" />
       <img class="brand-name-img" src="/static/name-text.png" alt="emobridge" />
     </a>
     <nav class="view-tabs" aria-label="Primary navigation">
-      <a class="tab-button" href="/" data-i18n="nav.home">首页</a>
-      <a class="tab-button" href="/essay" data-i18n="nav.essay">情绪随笔</a>
-      <a class="tab-button" href="/body-sensation" data-i18n="nav.body">身体感受</a>
-      <a class="tab-button" href="/emo-echo" data-i18n="nav.ecoEcho">Emo 回响</a>
-      <a class="tab-button is-active" href="/historyreview" aria-current="page" data-i18n="nav.historyReview">历史回顾</a>
-      <a class="tab-button" href="/profile" id="profileTab" style="display:none" data-i18n="nav.profile">个人信息</a>
-      <a class="tab-button" href="/login" id="authTab" data-i18n="nav.login">登录</a>
+      <a class="tab-button" href="/" data-i18n="nav.home">Home</a>
+      <a class="tab-button" href="/essay" data-i18n="nav.essay">Journal</a>
+      <a class="tab-button" href="/body-sensation" data-i18n="nav.body">Body Sense</a>
+      <a class="tab-button" href="/emo-echo" data-i18n="nav.ecoEcho">Emo Echo</a>
+      <a class="tab-button is-active" href="/historyreview" aria-current="page" data-i18n="nav.historyReview">History</a>
+      <a class="tab-button" href="/profile" id="profileTab" style="display:none" data-i18n="nav.profile">Profile</a>
+      <a class="tab-button" href="/login" id="authTab" data-i18n="nav.login">Login</a>
     </nav>
     <div class="topbar-right"></div>
   </header>
 
   <!-- SUB-TAB NAV -->
-  <div class="sub-tab-bar" role="tablist" aria-label="历史回顾栏目">
-    <button class="sub-tab-btn is-active" type="button" data-target="reviewPanel"  role="tab" aria-selected="true"  data-i18n="hr.tabReview">情绪回顾</button>
-    <button class="sub-tab-btn"           type="button" data-target="recordsPanel" role="tab" aria-selected="false" data-i18n="hr.tabRecords">历史记录</button>
+  <div class="sub-tab-bar" role="tablist" aria-label="History sections" data-ui-aria-label="历史回顾栏目">
+    <button class="sub-tab-btn is-active" type="button" data-target="reviewPanel"  role="tab" aria-selected="true"  data-i18n="hr.tabReview">Emotion Review</button>
+    <button class="sub-tab-btn"           type="button" data-target="recordsPanel" role="tab" aria-selected="false" data-i18n="hr.tabRecords">Records</button>
   </div>
 
   <!-- ===== 情绪回顾 (review iframe) ===== -->
@@ -55,7 +55,7 @@
       id="reviewFrame"
       class="embed-frame"
       src="/review?embed=1"
-      title="情绪回顾"
+      title="Emotion review" data-ui-title="情绪回顾"
       loading="eager">
     </iframe>
   </div>
@@ -66,41 +66,41 @@
     <!-- 数据图表区 -->
     <div style="margin-bottom:14px;">
       <p class="eyebrow" data-i18n="hr.dataEyebrow">Data & Insights</p>
-      <h2 style="margin:2px 0 0;font-size:clamp(28px,3.5vw,48px);font-weight:900;" data-i18n="hr.dataTitle">情绪数据</h2>
+      <h2 style="margin:2px 0 0;font-size:clamp(28px,3.5vw,48px);font-weight:900;" data-i18n="hr.dataTitle">Emotion Data</h2>
     </div>
 
     <div class="data-chart-area">
       <div class="warm-card">
         <div class="section-head" style="margin-bottom:10px;">
-          <h3 style="font-size:17px;font-weight:800;" data-i18n="hr.emotionFreq">情绪频率分布</h3>
-          <button class="warm-btn ghost" type="button" id="refreshChartsBtn" style="font-size:12px;min-height:32px;padding:0 12px;" data-i18n="hr.refresh">刷新</button>
+          <h3 style="font-size:17px;font-weight:800;" data-i18n="hr.emotionFreq">Emotion Frequency</h3>
+          <button class="warm-btn ghost" type="button" id="refreshChartsBtn" style="font-size:12px;min-height:32px;padding:0 12px;" data-i18n="hr.refresh">Refresh</button>
         </div>
         <div class="data-chart-wrap">
           <canvas id="emotionChart"></canvas>
-          <div class="data-no-data" id="chartNoData" style="display:none;" data-i18n="hr.noData">暂无记录，先去写日记吧 ✏️</div>
+          <div class="data-no-data" id="chartNoData" style="display:none;" data-i18n="hr.noData">No records yet. Start writing! ✏️</div>
         </div>
       </div>
 
       <div class="warm-card blue">
-        <h3 style="font-size:17px;font-weight:800;margin-bottom:10px;" data-i18n="hr.vaHistory">V-A 坐标历史</h3>
+        <h3 style="font-size:17px;font-weight:800;margin-bottom:10px;" data-i18n="hr.vaHistory">V-A Coordinate History</h3>
         <div class="data-chart-wrap">
           <canvas id="vaChart"></canvas>
-          <div class="data-no-data" id="vaChartNoData" style="display:none;" data-i18n="hr.noData">暂无记录，先去写日记吧 ✏️</div>
+          <div class="data-no-data" id="vaChartNoData" style="display:none;" data-i18n="hr.noData">No records yet. Start writing! ✏️</div>
         </div>
       </div>
     </div>
 
     <div class="data-tools-row" style="margin-bottom:28px;">
       <div class="warm-card" style="padding:16px;flex:1;">
-        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="hr.summaryTitle">记录摘要</h3>
+        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="hr.summaryTitle">Summary</h3>
         <div id="dataSummary" style="font-size:13px;color:var(--muted);line-height:1.8;"></div>
       </div>
       <div class="warm-card" style="padding:16px;flex:0 0 auto;min-width:200px;">
-        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="hr.exportTitle">导出数据</h3>
+        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="hr.exportTitle">Export Data</h3>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <button class="warm-btn primary" type="button" id="hrExportJson" style="width:100%;" data-i18n="hr.exportJson">导出 JSON</button>
-          <button class="warm-btn ghost" type="button" id="hrExportCsv" style="width:100%;" data-i18n="hr.exportCsv">导出 CSV</button>
-          <button class="warm-btn red" type="button" id="hrClearAll" style="width:100%;margin-top:4px;" data-i18n="hr.clearAll">清除所有记录</button>
+          <button class="warm-btn primary" type="button" id="hrExportJson" style="width:100%;" data-i18n="hr.exportJson">Export JSON</button>
+          <button class="warm-btn ghost" type="button" id="hrExportCsv" style="width:100%;" data-i18n="hr.exportCsv">Export CSV</button>
+          <button class="warm-btn red" type="button" id="hrClearAll" style="width:100%;margin-top:4px;" data-i18n="hr.clearAll">Clear All Records</button>
         </div>
       </div>
     </div>
@@ -109,49 +109,49 @@
     <section class="records-heading" aria-labelledby="hrRecordsTitle" style="margin-top:0;">
       <div>
         <p class="eyebrow">Timeline</p>
-        <h2 id="hrRecordsTitle">历史记录</h2>
-        <p style="color:var(--muted);font-size:14px;margin:4px 0 0;">这里仅读取已经保存过的随手记、正式日记和身体感受，不会在打开页面时调用模型。</p>
+        <h2 id="hrRecordsTitle" data-ui-copy="历史记录">Records</h2>
+        <p style="color:var(--muted);font-size:14px;margin:4px 0 0;" data-ui-copy="这里仅读取已经保存过的随手记、正式日记和身体感受，不会在打开页面时调用模型。">Only saved Journal, Diary and Body Sense records are shown. Opening this page does not call the model.</p>
       </div>
       <div class="records-filters">
         <label class="records-control" for="recordsStartDate">
-          <span>开始</span>
+          <span data-ui-copy="开始">Start</span>
           <input id="recordsStartDate" type="date" />
         </label>
         <label class="records-control" for="recordsEndDate">
-          <span>结束</span>
+          <span data-ui-copy="结束">End</span>
           <input id="recordsEndDate" type="date" />
         </label>
         <label class="records-control" for="recordsSource">
-          <span>类型</span>
+          <span data-ui-copy="类型">Type</span>
           <select id="recordsSource">
-            <option value="all">全部</option>
-            <option value="journal">Journal 随手记</option>
-            <option value="diary">Diary 正式日记</option>
-            <option value="body_sensation">Body 身体感受</option>
+            <option value="all" data-ui-copy="全部">All</option>
+            <option value="journal" data-ui-copy="Journal 随手记">Journal</option>
+            <option value="diary" data-ui-copy="Diary 正式日记">Diary</option>
+            <option value="body_sensation" data-ui-copy="Body 身体感受">Body Sense</option>
           </select>
         </label>
-        <button class="warm-btn primary" type="button" id="recordsLoadBtn">查看记录</button>
+        <button class="warm-btn primary" type="button" id="recordsLoadBtn" data-ui-copy="查看记录">View records</button>
       </div>
     </section>
 
-    <section class="records-summary-grid" aria-label="历史记录概览">
+    <section class="records-summary-grid" aria-label="Records overview" data-ui-aria-label="历史记录概览">
       <article class="records-stat">
-        <span>总记录</span>
+        <span data-ui-copy="总记录">Total records</span>
         <strong id="recordsTotal">0</strong>
-        <small id="recordsState">载入中</small>
+        <small id="recordsState" data-ui-copy="载入中">Loading</small>
       </article>
       <article class="records-stat">
-        <span>随手记</span>
+        <span data-ui-copy="随手记">Journal</span>
         <strong id="recordsJournalCount">0</strong>
         <small>Journal</small>
       </article>
       <article class="records-stat">
-        <span>正式日记</span>
+        <span data-ui-copy="正式日记">Diary</span>
         <strong id="recordsDiaryCount">0</strong>
         <small>Diary</small>
       </article>
       <article class="records-stat">
-        <span>身体感受</span>
+        <span data-ui-copy="身体感受">Body Sensation</span>
         <strong id="recordsBodyCount">0</strong>
         <small>Body</small>
       </article>
@@ -161,7 +161,7 @@
       <div class="records-panel-head">
         <div>
           <p class="eyebrow">Timeline</p>
-          <h2 id="hrListTitle">记录列表</h2>
+          <h2 id="hrListTitle" data-ui-copy="记录列表">Record list</h2>
         </div>
       </div>
       <div class="records-list" id="recordsList"></div>
@@ -222,14 +222,14 @@ function renderHistoryCharts() {
       eCanvas.style.display = 'block';
       if (eNoData) eNoData.style.display = 'none';
       var counts = {};
-      entries.forEach(function (e) { var l = e.label || '中性'; counts[l] = (counts[l] || 0) + 1; });
+      entries.forEach(function (e) { var l = e.label || SharedI18N.pick('中性', "Neutral"); counts[l] = (counts[l] || 0) + 1; });
       var sorted = Object.entries(counts).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 12);
       var COLORS = ['#F59E0B','#EF4444','#3B82F6','#10B981','#8B5CF6','#EC4899','#F97316','#06B6D4','#84CC16','#6366F1','#14B8A6','#F43F5E'];
       if (_emotionChartInst) _emotionChartInst.destroy();
       _emotionChartInst = new Chart(eCanvas, {
         type: 'bar',
         data: {
-          labels: sorted.map(function (x) { return x[0]; }),
+          labels: sorted.map(function (x) { return SharedI18N.label(x[0]); }),
           datasets: [{ data: sorted.map(function (x) { return x[1]; }), backgroundColor: COLORS.slice(0, sorted.length), borderRadius: 8, borderSkipped: false }],
         },
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } },
@@ -253,13 +253,13 @@ function renderHistoryCharts() {
         type: 'scatter',
         data: {
           datasets: [{
-            label: '情绪坐标',
-            data: valid.map(function (e) { return { x: e.valence || 0, y: e.arousal || 0, label: e.label }; }),
+            label: SharedI18N.pick('情绪坐标', "Emotion coordinates"),
+            data: valid.map(function (e) { return { x: e.valence || 0, y: e.arousal || 0, label: SharedI18N.label(e.label) }; }),
             backgroundColor: valid.map(function (e) { return e.color || '#F59E0B'; }),
             pointRadius: 7, pointHoverRadius: 10,
           }],
         },
-        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { min: -1, max: 1, title: { display: true, text: '效价 (Valence)' } }, y: { min: -1, max: 1, title: { display: true, text: '唤醒度 (Arousal)' } } } },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { min: -1, max: 1, title: { display: true, text: SharedI18N.pick('效价 (Valence)', "Valence") } }, y: { min: -1, max: 1, title: { display: true, text: SharedI18N.pick('唤醒度 (Arousal)', "Arousal") } } } },
       });
     }
   }
@@ -268,14 +268,20 @@ function renderHistoryCharts() {
   var box = document.getElementById('dataSummary');
   if (box) {
     if (!entries.length) {
-      box.textContent = '暂无记录。';
+      box.textContent = SharedI18N.pick('暂无记录。', "No records yet.");
     } else {
       var cnts = {};
-      entries.forEach(function (e) { var l = e.label || '中性'; cnts[l] = (cnts[l] || 0) + 1; });
+      entries.forEach(function (e) { var l = e.label || SharedI18N.pick('中性', "Neutral"); cnts[l] = (cnts[l] || 0) + 1; });
       var top = Object.entries(cnts).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 3);
       var avgV = entries.reduce(function (s, e) { return s + (e.valence || 0); }, 0) / entries.length;
       var avgA = entries.reduce(function (s, e) { return s + (e.arousal || 0); }, 0) / entries.length;
-      box.innerHTML = '共 <b>' + entries.length + '</b> 条记录<br>平均效价: <b>' + avgV.toFixed(2) + '</b><br>平均唤醒度: <b>' + avgA.toFixed(2) + '</b><br>最常见情绪:<br>' + top.map(function (x) { return '&nbsp;&nbsp;' + x[0] + ' × ' + x[1]; }).join('<br>');
+      box.textContent = '';
+      [SharedI18N.pick('共 ' + entries.length + ' 条记录', entries.length + ' records'),
+       SharedI18N.pick('平均效价: ', 'Average valence: ') + avgV.toFixed(2),
+       SharedI18N.pick('平均唤醒度: ', 'Average arousal: ') + avgA.toFixed(2),
+       SharedI18N.pick('最常见情绪:', 'Most frequent emotions:')]
+        .concat(top.map(function (x) { return SharedI18N.label(x[0]) + ' × ' + x[1]; }))
+        .forEach(function (line) { var p = document.createElement('div'); p.textContent = line; box.appendChild(p); });
     }
   }
 }
@@ -288,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Clear all records
   var clearBtn = document.getElementById('hrClearAll');
   if (clearBtn) clearBtn.addEventListener('click', async function () {
-    if (!confirm('确定要清除所有记录吗？此操作不可撤销。')) return;
+    if (!confirm(SharedI18N.pick('确定要清除所有记录吗？此操作不可撤销。', "Clear all records? This cannot be undone."))) return;
     var code = participantCode() || 'local';
     try { await fetch('/participants/' + encodeURIComponent(code) + '/all-data', { method: 'DELETE' }); } catch (e) {}
     try {
@@ -330,9 +336,9 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<script src="/static/records.js?v=20260607a" defer></script>
-<script src="/static/i18n.js?v=20260607a"></script>
-<script src="/static/auth.js?v=20260607a"></script>
+<script src="/static/records.js?v=20261010a" defer></script>
+<script src="/static/i18n.js?v=20261010a"></script>
+<script src="/static/auth.js?v=20261010a"></script>
 <script>
 window.addEventListener('message', function (e) {
   if (!e.data || e.data.type !== 'emb-height') return;

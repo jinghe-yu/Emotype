@@ -17,13 +17,22 @@ fallbacks.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from typing import Any
+from urllib.parse import urlparse
+
+try:
+    from emotion_rec.core import config as _config
+except ModuleNotFoundError:
+    from core import config as _config  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", os.getenv("LLM_API_KEY", ""))
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", os.getenv("LLM_MODEL", "deepseek-v4-flash"))
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", os.getenv("LLM_MODEL", "deepseek-flash"))
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", os.getenv("LLM_API_BASE_URL", "https://api.deepseek.com"))
 DEEPSEEK_TIMEOUT_SECONDS = os.getenv("DEEPSEEK_TIMEOUT_SECONDS", os.getenv("LLM_TIMEOUT_SECONDS", "30"))
 
@@ -36,22 +45,22 @@ def _env_bool(name: str, default: bool = True) -> bool:
 
 
 def _base_url() -> str:
-    return (DEEPSEEK_BASE_URL or "https://api.deepseek.com").strip()
+    return (os.getenv("DEEPSEEK_BASE_URL", os.getenv("LLM_API_BASE_URL", DEEPSEEK_BASE_URL)) or "https://api.deepseek.com").strip()
 
 
 def default_model() -> str:
-    return (DEEPSEEK_MODEL or "deepseek-v4-flash").strip()
+    return (os.getenv("DEEPSEEK_MODEL", os.getenv("LLM_MODEL", DEEPSEEK_MODEL)) or "deepseek-flash").strip()
 
 
 def _timeout() -> float:
     try:
-        return float(DEEPSEEK_TIMEOUT_SECONDS)
+        return max(1.0, float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", os.getenv("LLM_TIMEOUT_SECONDS", DEEPSEEK_TIMEOUT_SECONDS))))
     except (TypeError, ValueError):
         return 30.0
 
 
 def _resolve_api_key() -> str:
-    key = (DEEPSEEK_API_KEY or "").strip()
+    key = (os.getenv("DEEPSEEK_API_KEY", os.getenv("LLM_API_KEY", DEEPSEEK_API_KEY)) or "").strip()
     if key.lower().startswith("bearer "):
         key = key[7:].strip()
     return key
@@ -66,15 +75,36 @@ _CLIENT: Any = None
 _CLIENT_SIGNATURE: tuple[str, str, float] | None = None
 
 
-def get_client():
+class LLMError(RuntimeError):
+    """A safe, machine-readable provider failure without secrets or user text."""
+
+    def __init__(self, code: str):
+        self.code = code
+        super().__init__(code)
+
+
+def configuration_status() -> str:
+    if not _env_bool("LLM_ENABLED", True):
+        return "disabled"
+    if not _resolve_api_key():
+        return "missing_api_key"
+    from importlib.util import find_spec
+    return "configured" if find_spec("openai") else "missing_sdk"
+
+
+def get_client(*, raise_on_error: bool = False):
     """Return a cached OpenAI client pointed at DeepSeek, or ``None``."""
     global _CLIENT, _CLIENT_SIGNATURE
 
     if not _env_bool("LLM_ENABLED", True):
+        if raise_on_error:
+            raise LLMError("disabled")
         return None
 
     api_key = _resolve_api_key()
     if not api_key:
+        if raise_on_error:
+            raise LLMError("missing_api_key")
         return None
 
     signature = (api_key, _base_url(), _timeout())
@@ -84,7 +114,9 @@ def get_client():
     try:
         from openai import OpenAI
     except Exception as exc:  # pragma: no cover - import guard
-        print(f"[llm_client] openai SDK not available: {exc}")
+        logger.warning("LLM SDK unavailable: %s", type(exc).__name__)
+        if raise_on_error:
+            raise LLMError("missing_sdk") from exc
         return None
 
     try:
@@ -92,14 +124,16 @@ def get_client():
             api_key=api_key,
             base_url=_base_url(),
             timeout=_timeout(),
-            max_retries=1,
+            max_retries=0,
         )
         _CLIENT_SIGNATURE = signature
         return _CLIENT
     except Exception as exc:
-        print(f"[llm_client] failed to build OpenAI client: {exc}")
+        logger.warning("LLM client initialization failed: %s", type(exc).__name__)
         _CLIENT = None
         _CLIENT_SIGNATURE = None
+        if raise_on_error:
+            raise LLMError("invalid_configuration") from exc
         return None
 
 
@@ -140,10 +174,12 @@ def chat(
     temperature: float | None = None,
     json_mode: bool = False,
     max_tokens: int | None = None,
+    raise_on_error: bool = False,
+    non_thinking: bool = False,
     **kwargs: Any,
 ) -> str | None:
     """Call DeepSeek chat completions and return raw assistant content."""
-    client = get_client()
+    client = get_client(raise_on_error=raise_on_error)
     if client is None:
         return None
 
@@ -158,12 +194,26 @@ def chat(
     if json_mode:
         request["response_format"] = {"type": "json_object"}
     request.update(kwargs)
+    if non_thinking and urlparse(_base_url()).hostname == "api.deepseek.com":
+        request["extra_body"] = {**request.get("extra_body", {}), "thinking": {"type": "disabled"}}
 
     try:
         response = client.chat.completions.create(**request)
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        if not strip_content(content):
+            raise LLMError("empty_response")
+        return content
     except Exception as exc:
-        print(f"[llm_client] chat call failed: {exc}")
+        status = getattr(exc, "status_code", None)
+        code = exc.code if isinstance(exc, LLMError) else (
+            "authentication_failed" if status in (401, 403) else
+            "rate_limited" if status == 429 else
+            "invalid_request" if status in (400, 404, 422) else
+            "timeout" if "timeout" in type(exc).__name__.lower() else "provider_unavailable"
+        )
+        logger.warning("LLM request failed: code=%s status=%s type=%s", code, status, type(exc).__name__)
+        if raise_on_error:
+            raise LLMError(code) from exc
         return None
 
 
@@ -176,7 +226,7 @@ def chat_json(
     retries: int = 1,
     **kwargs: Any,
 ) -> Any:
-    """Call Gemini (primary) or DeepSeek (fallback) in JSON mode; return parsed JSON."""
+    """Call the configured DeepSeek-compatible provider in JSON mode."""
     last_content: str | None = None
     for _ in range(max(1, retries + 1)):
         content = chat(
@@ -193,5 +243,5 @@ def chat_json(
                 return parsed
             last_content = content
     if last_content is not None:
-        print(f"[llm_client] JSON parse failed. preview={strip_content(last_content)[:300]}")
+        logger.warning("LLM response was not valid JSON")
     return None

@@ -91,12 +91,12 @@
       function (response) {
         if (response.status === 401) {
           logout();
-          throw new Error("登录已过期，请重新登录。");
+          throw new Error(SharedI18N.pick("登录已过期，请重新登录。", "Your session has expired. Please log in again."));
         }
         if (!response.ok) {
           return response.json().then(function (data) {
             throw new Error(
-              data.detail || data.message || "请求失败 (" + response.status + ")"
+              SharedI18N.text((typeof data.detail === "object" ? data.detail.message : data.detail) || data.message || SharedI18N.pick("请求失败 (", "Request failed (") + response.status + ")")
             );
           });
         }
@@ -136,7 +136,7 @@
         badge.className = "auth-user-badge";
         badge.id = "authUserBadge";
         badge.href = "/profile";
-        badge.title = "个人信息";
+        badge.title = SharedI18N.pick("个人信息", "Profile");
 
         var avatarSpan = document.createElement("span");
         avatarSpan.className = "auth-avatar-mini";
@@ -153,7 +153,7 @@
         var logoutBtn = document.createElement("button");
         logoutBtn.className = "auth-logout-btn";
         logoutBtn.id = "authLogoutBtn";
-        logoutBtn.textContent = "退出";
+        logoutBtn.textContent = SharedI18N.pick("退出", "Log out");
         logoutBtn.addEventListener("click", function (e) {
           e.preventDefault();
           logout();
@@ -176,27 +176,27 @@
         badge.className = "auth-user-badge auth-guest-badge";
         badge.id = "authUserBadge";
         badge.type = "button";
-        badge.title = "点击设置昵称";
+        badge.title = SharedI18N.pick("点击设置昵称", "Set your nickname");
 
         var avatarSpan = document.createElement("span");
         avatarSpan.className = "auth-avatar-mini auth-avatar-guest";
-        avatarSpan.textContent = nickname ? nickname[0].toUpperCase() : "访";
+        avatarSpan.textContent = nickname ? nickname[0].toUpperCase() : SharedI18N.pick("访", "G");
 
         var nameSpan = document.createElement("span");
         nameSpan.className = "auth-user-name";
         nameSpan.id = "authGuestName";
-        nameSpan.textContent = nickname || "访客";
+        nameSpan.textContent = nickname || SharedI18N.pick("访客", "Guest");
 
         badge.appendChild(avatarSpan);
         badge.appendChild(nameSpan);
         badge.addEventListener("click", function () {
           var current;
           try { current = localStorage.getItem(NICKNAME_KEY) || ""; } catch (e) { current = ""; }
-          var newName = prompt("设置你的昵称（留空恢复默认）：", current);
+          var newName = prompt(SharedI18N.pick("设置你的昵称（留空恢复默认）：", "Set your nickname (leave blank to reset):"), current);
           if (newName === null) return;
           newName = newName.trim().slice(0, 20);
           try { localStorage.setItem(NICKNAME_KEY, newName); } catch (e) {}
-          var display = newName || "访客";
+          var display = newName || SharedI18N.pick("访客", "Guest");
           document.getElementById("authGuestName").textContent = display;
           document.querySelector("#authUserBadge .auth-avatar-guest").textContent = display[0].toUpperCase();
         });
@@ -208,7 +208,7 @@
           loginLink.className = "auth-login-link";
           loginLink.id = "authLoginLink";
           loginLink.href = "/login";
-          loginLink.textContent = "登录";
+          loginLink.textContent = SharedI18N.pick("登录", "Login");
           topbarRight.insertBefore(loginLink, badge.nextSibling);
         }
       }

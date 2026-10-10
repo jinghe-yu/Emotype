@@ -253,7 +253,7 @@ Records / Review / Export / Emo 回响上下文
 | `/api/analyze-combined` | POST | 图文情绪融合 | JSON: text、image_analysis | combined_emotion |
 | `/body-sensation/advice` | POST | 身体感受、安全规则和建议 | JSON: journal_text、selected_regions、symptoms、free_text 等 | emotion_context、possible_links、advice、safety |
 | `/api/emo-echo/sessions` | GET | 获取 Emo 回响历史会话 | participant_code 或 JWT | sessions |
-| `/api/emo-echo/chat` | POST | 情感陪伴对话 | message、session_id、history、participant_code | reply、session_id |
+| `/api/emo-echo/chat` | POST | 情感陪伴对话 | message、session_id、history、participant_code | reply、session_id、reply_source、language、context_loaded、saved；保底时 error_code |
 
 ### 账号与管理员
 
@@ -367,6 +367,11 @@ $env:MODEL_NAME_OR_PATH = "C:\path\to\Wav2vec-2.0"
 ### 3. 配置环境变量
 
 最小本地模式不要求外部 API key；文本、排版、建议和复盘会使用 fallback。账号部署建议至少设置稳定的 `SECRET_KEY`：
+
+网站新访客默认英文，主动选择过的中文偏好会保留。Echo 开场固定英文，真实模型回复跟随最新输入语言；
+Body Sense 建议固定英文。Echo 读取同一参与者近 15 天的 Journal、已保存 Diary 与 Body Sense 记录，
+模型异常时使用正常英文聊天气泡保底，内部响应保留真实来源与安全错误码。完整部署及验收方法见
+[`DEPLOYMENT.md`](DEPLOYMENT.md)。
 
 ```powershell
 $env:SECRET_KEY = "replace-with-a-long-random-secret"

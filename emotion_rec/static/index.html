@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EmoMirror</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20260607a" />
+  <title>EmoBridge</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20261010a" />
+<script src="/static/i18n.js?v=20261010a"></script>
 </head>
 <body>
 
@@ -38,19 +39,19 @@
 
   <!-- ===== TOPBAR ===== -->
   <header class="topbar">
-    <a class="brand-mark" href="/" aria-label="EmoBridge 首页">
+    <a class="brand-mark" href="/" aria-label="EmoBridge home" data-ui-aria-label="EmoBridge 首页">
       <img class="brand-icon2" src="/static/icon2-only.png" alt="" aria-hidden="true" />
       <img class="brand-name-img" src="/static/name-text.png" alt="emobridge" />
     </a>
 
     <nav class="view-tabs" aria-label="Primary navigation">
-      <button class="tab-button is-active" type="button" data-view="homeView" data-i18n="nav.home">首页</button>
-      <a class="tab-button" href="/essay" data-i18n="nav.essay">情绪随笔</a>
-      <a class="tab-button" href="/body-sensation" data-i18n="nav.body">身体感受</a>
-      <a class="tab-button" href="/emo-echo" data-i18n="nav.ecoEcho">Emo 回响</a>
-      <a class="tab-button" href="/historyreview" data-i18n="nav.historyReview">历史回顾</a>
-      <a class="tab-button" href="/profile" id="profileTab" style="display:none" data-i18n="nav.profile">个人信息</a>
-      <a class="tab-button" href="/login" id="authTab" data-i18n="nav.login">登录</a>
+      <button class="tab-button is-active" type="button" data-view="homeView" data-i18n="nav.home">Home</button>
+      <a class="tab-button" href="/essay" data-i18n="nav.essay">Journal</a>
+      <a class="tab-button" href="/body-sensation" data-i18n="nav.body">Body Sense</a>
+      <a class="tab-button" href="/emo-echo" data-i18n="nav.ecoEcho">Emo Echo</a>
+      <a class="tab-button" href="/historyreview" data-i18n="nav.historyReview">History</a>
+      <a class="tab-button" href="/profile" id="profileTab" style="display:none" data-i18n="nav.profile">Profile</a>
+      <a class="tab-button" href="/login" id="authTab" data-i18n="nav.login">Login</a>
     </nav>
 
     <div class="topbar-right">
@@ -79,9 +80,9 @@
 
       <!-- Hero text block -->
       <div class="hero-text-block">
-        <h1 id="homeTitle" data-i18n="home.title">感受你的情绪</h1>
-        <p data-i18n="home.subtitle">写下或说出今天发生的事，EmoBridge 会把你的情绪转化成流动的文字与色彩。</p>
-        <button class="warm-btn primary" type="button" data-view="journalView" data-i18n="home.cta">开始今天的记录</button>
+        <h1 id="homeTitle" data-i18n="home.title">Feel your emotion</h1>
+        <p data-i18n="home.subtitle">Write or speak. EmoBridge turns subtle emotional signals into living type.</p>
+        <button class="warm-btn primary" type="button" data-view="journalView" data-i18n="home.cta">Start today's entry</button>
       </div>
 
     </div>
@@ -89,19 +90,19 @@
     <!-- Stats -->
     <div class="home-stats">
       <article class="stat-card">
-        <span class="stat-label" data-i18n="home.stat.entries">记录条数</span>
+        <span class="stat-label" data-i18n="home.stat.entries">Entries</span>
         <strong class="stat-value" id="entryCount">0</strong>
-        <small id="entryStorageMode" data-i18n="home.stat.localOnly">仅本地</small>
+        <small id="entryStorageMode" data-i18n="home.stat.localOnly">local only</small>
       </article>
       <article class="stat-card">
-        <span class="stat-label" data-i18n="home.stat.latest">最新情绪</span>
-        <strong class="stat-value" id="latestEmotion" style="font-size:clamp(18px,2.8vw,30px);">中性</strong>
-        <small id="latestConfidence" data-i18n="home.stat.waiting">等待输入</small>
+        <span class="stat-label" data-i18n="home.stat.latest">Latest label</span>
+        <strong class="stat-value" id="latestEmotion" style="font-size:clamp(18px,2.8vw,30px);" data-ui-copy="中性">Neutral</strong>
+        <small id="latestConfidence" data-i18n="home.stat.waiting">waiting for text</small>
       </article>
       <article class="stat-card">
-        <span class="stat-label" data-i18n="home.stat.intensity">镜像强度</span>
+        <span class="stat-label" data-i18n="home.stat.intensity">Mirror intensity</span>
         <strong class="stat-value" id="homeIntensity">80%</strong>
-        <small data-i18n="home.stat.intensityHint">可在日记页调整</small>
+        <small data-i18n="home.stat.intensityHint">adjustable in journal</small>
       </article>
     </div>
 
@@ -109,10 +110,10 @@
     <section class="warm-card" aria-labelledby="recentTitle" style="margin-top:0">
       <div class="section-head">
         <div>
-          <p class="eyebrow" data-i18n="home.recent.eyebrow">从新到旧</p>
-          <h2 id="recentTitle" data-i18n="home.recent.title">情绪日记</h2>
+          <p class="eyebrow" data-i18n="home.recent.eyebrow">Newest first</p>
+          <h2 id="recentTitle" data-i18n="home.recent.title">Emotion Journal</h2>
         </div>
-        <button class="warm-btn ghost" type="button" id="clearEntries" data-i18n="home.recent.clear">清除本地记录</button>
+        <button class="warm-btn ghost" type="button" id="clearEntries" data-i18n="home.recent.clear">Clear local entries</button>
       </div>
       <div class="entry-list" id="entryList"></div>
     </section>
@@ -129,34 +130,34 @@
       <section class="editor-pane">
         <div class="section-head">
           <div>
-            <p class="eyebrow" data-i18n="journal.eyebrow">表达性写作</p>
-            <h2 id="journalTitle" data-i18n="journal.title">今天的记录</h2>
+            <p class="eyebrow" data-i18n="journal.eyebrow">Expressive writing</p>
+            <h2 id="journalTitle" data-i18n="journal.title">Today's entry</h2>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-            <span class="status-pill" id="analysisStatus" data-i18n="journal.ready">就绪</span>
+            <span class="status-pill" id="analysisStatus" data-i18n="journal.ready">Ready</span>
             <span id="journalDateDisplay" style="font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap;"></span>
           </div>
         </div>
 
         <div class="input-mode-row" role="group">
-          <button class="mode-button is-active" type="button" id="typingMode" data-i18n="journal.modeType">文字输入</button>
-          <button class="mode-button" type="button" id="voiceMode" data-i18n="journal.modeVoice">语音转文字</button>
+          <button class="mode-button is-active" type="button" id="typingMode" data-i18n="journal.modeType">Type</button>
+          <button class="mode-button" type="button" id="voiceMode" data-i18n="journal.modeVoice">Voice to text</button>
         </div>
 
         <textarea
           id="journalText"
           spellcheck="true"
           data-i18n-placeholder="journal.placeholder"
-          placeholder="写下发生了什么。可以具体、模糊、矛盾，或者不确定。"
-        >今天我一直说没事，但开完会之后胸口有点紧。</textarea>
+          placeholder="Write what happened. Be specific, vague, contradictory, or unsure." data-ui-placeholder="写下发生了什么。可以具体、模糊、矛盾，或者不确定。"
+        >I kept saying I was fine today, but my chest felt a little tight after the meeting.</textarea>
 
         <div class="editor-tools">
           <label class="slider-control" for="intensityRange">
-            <span data-i18n="journal.intensity">镜像反馈强度</span>
+            <span data-i18n="journal.intensity">Feedback intensity</span>
             <input id="intensityRange" type="range" min="0" max="100" value="80" />
           </label>
-          <button class="warm-btn ghost" type="button" id="voiceButton" data-i18n="journal.startVoice">开始语音</button>
-          <button class="warm-btn primary" type="button" id="saveEntry" data-i18n="journal.save">保存记录</button>
+          <button class="warm-btn ghost" type="button" id="voiceButton" data-i18n="journal.startVoice">Start voice</button>
+          <button class="warm-btn primary" type="button" id="saveEntry" data-i18n="journal.save">Save entry</button>
         </div>
       </section>
 
@@ -164,8 +165,8 @@
       <section class="mirror-pane" aria-labelledby="mirrorTitle">
         <div class="section-head">
           <div>
-            <p class="eyebrow" data-i18n="journal.mirror.eyebrow">情绪动态字体</p>
-            <h2 id="mirrorTitle" data-i18n="journal.mirror.title">实时镜像</h2>
+            <p class="eyebrow" data-i18n="journal.mirror.eyebrow">Kinetic affective type</p>
+            <h2 id="mirrorTitle" data-i18n="journal.mirror.title">Live mirror</h2>
           </div>
           <span class="emotion-dot" id="emotionDot" aria-hidden="true"></span>
         </div>
@@ -174,8 +175,8 @@
 
         <div class="emotion-panel">
           <div>
-            <span class="panel-label" data-i18n="journal.detected">识别结果</span>
-            <strong id="primaryEmotion">不明确</strong>
+            <span class="panel-label" data-i18n="journal.detected">Detected</span>
+            <strong id="primaryEmotion" data-ui-copy="不明确">Unclear</strong>
             <p class="coordinate-summary" id="reflectionText"></p>
           </div>
           <div class="confidence-meter" aria-label="Confidence">
@@ -183,32 +184,32 @@
           </div>
         </div>
 
-        <div class="chip-row" id="emotionChips" aria-label="候选情绪标签"></div>
+        <div class="chip-row" id="emotionChips" aria-label="Candidate emotion labels" data-ui-aria-label="候选情绪标签"></div>
 
-        <div class="label-editor" aria-label="自定义情绪标签">
+        <div class="label-editor" aria-label="Custom emotion label" data-ui-aria-label="自定义情绪标签">
           <label class="custom-label-control" for="customEmotionLabel">
-            <span data-i18n="journal.customLabel">自定义标签</span>
+            <span data-i18n="journal.customLabel">Custom label</span>
             <input id="customEmotionLabel" type="text"
               data-i18n-placeholder="journal.customPlaceholder"
-              placeholder="输入更贴近的情绪词"
+              placeholder="Type a closer emotion word" data-ui-placeholder="输入更贴近的情绪词"
               autocomplete="off" />
           </label>
-          <button class="warm-btn ghost" type="button" id="applyCustomLabel" data-i18n="journal.apply">应用</button>
+          <button class="warm-btn ghost" type="button" id="applyCustomLabel" data-i18n="journal.apply">Apply</button>
         </div>
 
-        <section class="va-control" aria-label="V-A 坐标">
+        <section class="va-control" aria-label="V-A Coordinate" data-ui-aria-label="V-A 坐标">
           <div class="va-control-head">
-            <span class="panel-label" data-i18n="journal.va">V-A 坐标</span>
+            <span class="panel-label" data-i18n="journal.va">V-A Coordinate</span>
             <strong id="vaReadout">V +0.00 · A +0.00</strong>
           </div>
           <div class="va-plane" id="vaPlane" role="slider" tabindex="0" aria-label="Valence arousal handle">
             <span class="va-axis va-axis-x"></span>
             <span class="va-axis va-axis-y"></span>
-            <span class="va-axis-label va-positive" data-i18n="va.positive">积极</span>
-            <span class="va-axis-label va-negative" data-i18n="va.negative">消极</span>
-            <span class="va-axis-label va-high" data-i18n="va.high">高能量</span>
-            <span class="va-axis-label va-low" data-i18n="va.low">低能量</span>
-            <button class="va-handle" id="vaHandle" type="button" aria-label="坐标拖拽手柄"></button>
+            <span class="va-axis-label va-positive" data-i18n="va.positive">Positive</span>
+            <span class="va-axis-label va-negative" data-i18n="va.negative">Negative</span>
+            <span class="va-axis-label va-high" data-i18n="va.high">High energy</span>
+            <span class="va-axis-label va-low" data-i18n="va.low">Low energy</span>
+            <button class="va-handle" id="vaHandle" type="button" aria-label="Drag to adjust coordinates" data-ui-aria-label="坐标拖拽手柄"></button>
           </div>
         </section>
       </section>
@@ -222,9 +223,9 @@
   <section class="view" id="bodyView" aria-labelledby="bodyTitle">
 
     <div style="margin-bottom:14px;">
-      <p class="eyebrow" data-i18n="body.eyebrow">情绪与身体</p>
-      <h2 id="bodyTitle" data-i18n="body.title">身体感受</h2>
-      <p style="color:var(--muted);font-size:14px;margin:6px 0 0;" data-i18n="body.subtitle">选择身体不适部位和感受，结合最近日记，生成温和缓解提示。</p>
+      <p class="eyebrow" data-i18n="body.eyebrow">Emotion & Body</p>
+      <h2 id="bodyTitle" data-i18n="body.title">Body Sense</h2>
+      <p style="color:var(--muted);font-size:14px;margin:6px 0 0;" data-i18n="body.subtitle">Select body regions and sensations. The system combines them with recent records to generate gentle, non-diagnostic advice.</p>
     </div>
 
     <div class="body-layout">
@@ -232,7 +233,7 @@
       <!-- Left: body diagram placeholder -->
       <div class="body-diagram-wrap">
         <div class="warm-card red" style="padding:14px;flex:1;display:flex;flex-direction:column;gap:12px;">
-          <h3 style="font-size:14px;font-weight:800;color:var(--red);margin:0;" data-i18n="body.diagram">身体部位图</h3>
+          <h3 style="font-size:14px;font-weight:800;color:var(--red);margin:0;" data-i18n="body.diagram">Body diagram</h3>
 
           <!-- Body diagram: simple image display, no interaction -->
           <div class="body-diagram-img-wrap" id="bodyDiagramWrap">
@@ -242,8 +243,8 @@
 
           <!-- Selected pairs -->
           <div>
-            <div class="panel-label" style="margin-bottom:8px;" data-i18n="body.selected">已选组合</div>
-            <div id="bodyPairsView" class="body-selected-pairs" style="color:var(--muted-light);font-size:13px;" data-i18n="body.noPairs">暂无</div>
+            <div class="panel-label" style="margin-bottom:8px;" data-i18n="body.selected">Selected pairs</div>
+            <div id="bodyPairsView" class="body-selected-pairs" style="color:var(--muted-light);font-size:13px;" data-i18n="body.noPairs">None yet</div>
           </div>
         </div>
       </div>
@@ -253,58 +254,58 @@
 
         <!-- Journal text reference -->
         <div class="warm-card" style="padding:14px;">
-          <h3 data-i18n="body.journalRef">当前日记参考</h3>
+          <h3 data-i18n="body.journalRef">Journal reference</h3>
           <textarea id="bodyJournalText" style="min-height:70px;font-size:13px;margin-top:6px;"
             data-i18n-placeholder="body.journalRefPlaceholder"
-            placeholder="填写当前的日记内容（可选）"></textarea>
+            placeholder="Paste today's journal (optional)" data-ui-placeholder="填写当前的日记内容（可选）"></textarea>
         </div>
 
         <!-- Region selection -->
         <div class="warm-card" style="padding:14px;">
-          <h3 data-i18n="body.selectRegion">选择部位</h3>
+          <h3 data-i18n="body.selectRegion">Select region</h3>
           <div id="bodyRegionChips" class="chip-row" style="margin-top:6px;gap:6px;"></div>
         </div>
 
         <!-- Symptom selection -->
         <div class="warm-card" style="padding:14px;">
-          <h3 data-i18n="body.selectSymptom">选择感受</h3>
+          <h3 data-i18n="body.selectSymptom">Select symptom</h3>
           <div id="bodySymptomChips" class="chip-row" style="margin-top:6px;gap:6px;"></div>
         </div>
 
         <!-- Severity + duration -->
         <div class="warm-card" style="padding:14px;">
-          <h3 data-i18n="body.details">详细信息</h3>
+          <h3 data-i18n="body.details">Details</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
             <label class="severity-control">
-              <span data-i18n="body.severity">程度</span>
+              <span data-i18n="body.severity">Severity</span>
               <input type="range" id="bodySeverity" min="1" max="5" value="3" />
               <span id="bodySeverityLabel" style="font-size:12px;color:var(--red);">3 / 5</span>
             </label>
             <label class="slider-control">
-              <span data-i18n="body.duration">持续时间</span>
-              <input type="text" id="bodyDuration" value="下午开始"
+              <span data-i18n="body.duration">Duration</span>
+              <input type="text" id="bodyDuration" value="" placeholder="e.g., since this afternoon"
                 style="min-height:36px;border:1.5px dashed rgba(239,68,68,0.3);border-radius:8px;padding:0 10px;background:#fff;outline:none;font-size:13px;" />
             </label>
           </div>
           <button class="warm-btn" type="button" id="bodyAddPair"
             style="margin-top:10px;background:var(--red-bg);color:var(--red);border:1.5px dashed var(--red);border-radius:8px;font-weight:700;font-size:13px;min-height:36px;padding:0 14px;"
-            data-i18n="body.addPair">加入组合</button>
+            data-i18n="body.addPair">Add pair</button>
           <button class="warm-btn ghost" type="button" id="bodyClearPairs"
-            style="margin-left:8px;font-size:13px;min-height:36px;" data-i18n="body.clearPairs">清空</button>
+            style="margin-left:8px;font-size:13px;min-height:36px;" data-i18n="body.clearPairs">Clear</button>
         </div>
 
         <!-- Free text -->
         <div class="warm-card" style="padding:14px;">
-          <h3 data-i18n="body.describe">补充描述</h3>
+          <h3 data-i18n="body.describe">Describe more</h3>
           <textarea id="bodyFreeText" style="min-height:70px;font-size:13px;margin-top:6px;border-color:rgba(239,68,68,0.25);"
             data-i18n-placeholder="body.describePlaceholder"
-            placeholder="今天喝水较少，坐着学习了很久…"></textarea>
+            placeholder="Less water today, studied for hours…" data-ui-placeholder="今天喝水较少，坐着学习了很久…"></textarea>
         </div>
 
         <!-- Submit -->
         <div class="body-submit-wrap">
-          <button class="warm-btn red" type="button" id="bodySubmitBtn" data-i18n="body.generate">生成身体感受建议</button>
-          <span class="body-submit-status" id="bodySubmitStatus" data-i18n="body.statusHint">系统会综合身体感受和最近日记。</span>
+          <button class="warm-btn red" type="button" id="bodySubmitBtn" data-i18n="body.generate">Generate Body Advice</button>
+          <span class="body-submit-status" id="bodySubmitStatus" data-i18n="body.statusHint">System combines body sensations with recent records.</span>
         </div>
 
       </div>
@@ -321,28 +322,28 @@
   <section class="view" id="dataView" aria-labelledby="dataTitle">
 
     <div style="margin-bottom:14px;">
-      <p class="eyebrow" data-i18n="data.eyebrow">数据与洞察</p>
-      <h2 id="dataTitle" data-i18n="data.title">情绪数据</h2>
+      <p class="eyebrow" data-i18n="data.eyebrow">Insights</p>
+      <h2 id="dataTitle" data-i18n="data.title">Emotion Data</h2>
     </div>
 
     <!-- Charts: side-by-side on wide screens -->
     <div class="data-chart-area">
       <div class="warm-card">
         <div class="section-head" style="margin-bottom:10px;">
-          <h3 style="font-size:17px;font-weight:800;" data-i18n="data.emotionFreq">情绪频率分布</h3>
-          <button class="warm-btn ghost" type="button" id="refreshCharts" style="font-size:12px;min-height:32px;padding:0 12px;" data-i18n="data.refresh">刷新</button>
+          <h3 style="font-size:17px;font-weight:800;" data-i18n="data.emotionFreq">Emotion frequency</h3>
+          <button class="warm-btn ghost" type="button" id="refreshCharts" style="font-size:12px;min-height:32px;padding:0 12px;" data-i18n="data.refresh">Refresh</button>
         </div>
         <div class="data-chart-wrap">
           <canvas id="emotionChart"></canvas>
-          <div class="data-no-data" id="chartNoData" style="display:none;" data-i18n="data.noData">暂无记录，先去写日记吧 ✏️</div>
+          <div class="data-no-data" id="chartNoData" style="display:none;" data-i18n="data.noData">No entries yet. Start journaling ✏️</div>
         </div>
       </div>
 
       <div class="warm-card blue">
-        <h3 style="font-size:17px;font-weight:800;margin-bottom:10px;" data-i18n="data.vaHistory">V-A 坐标历史</h3>
+        <h3 style="font-size:17px;font-weight:800;margin-bottom:10px;" data-i18n="data.vaHistory">V-A history</h3>
         <div class="data-chart-wrap">
           <canvas id="vaChart"></canvas>
-          <div class="data-no-data" id="vaChartNoData" style="display:none;" data-i18n="data.noData">暂无记录，先去写日记吧 ✏️</div>
+          <div class="data-no-data" id="vaChartNoData" style="display:none;" data-i18n="data.noData">No entries yet. Start journaling ✏️</div>
         </div>
       </div>
     </div>
@@ -350,16 +351,16 @@
     <!-- Tools row: export + summary + clear (below charts) -->
     <div class="data-tools-row">
       <div class="warm-card" style="padding:16px;flex:1;">
-        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="data.summary">记录摘要</h3>
+        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="data.summary">Summary</h3>
         <div id="dataSummary" style="font-size:13px;color:var(--muted);line-height:1.8;"></div>
       </div>
       <div class="warm-card" style="padding:16px;flex:0 0 auto;min-width:200px;">
-        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="data.export">导出数据</h3>
+        <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;" data-i18n="data.export">Export data</h3>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <button class="warm-btn primary" type="button" id="dataExportJson" style="width:100%;" data-i18n="research.exportJson">导出 JSON</button>
-          <button class="warm-btn ghost" type="button" id="dataExportCsv" style="width:100%;" data-i18n="research.exportCsv">导出 CSV</button>
+          <button class="warm-btn primary" type="button" id="dataExportJson" style="width:100%;" data-i18n="research.exportJson">Export JSON</button>
+          <button class="warm-btn ghost" type="button" id="dataExportCsv" style="width:100%;" data-i18n="research.exportCsv">Export CSV</button>
           <button class="warm-btn ghost" type="button" id="clearEntriesData"
-            style="border-color:var(--red);color:var(--red);font-size:13px;margin-top:4px;" data-i18n="home.recent.clear">清除本地记录</button>
+            style="border-color:var(--red);color:var(--red);font-size:13px;margin-top:4px;" data-i18n="home.recent.clear">Clear local entries</button>
         </div>
       </div>
     </div>
@@ -369,8 +370,8 @@
 
 <!-- Chart.js via CDN (jsDelivr works in China) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="/static/vaMapper.js?v=20260607a" defer></script>
-<script src="/static/auth.js?v=20260607a"></script>
-<script src="/static/app.js?v=20260607b" defer></script>
+<script src="/static/vaMapper.js?v=20261010a" defer></script>
+<script src="/static/auth.js?v=20261010a"></script>
+<script src="/static/app.js?v=20261010a" defer></script>
 </body>
 </html>
