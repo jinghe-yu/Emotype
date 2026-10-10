@@ -1,8 +1,10 @@
 """FastAPI application assembly and backward-compatible route implementations."""
 
+import asyncio
 import json
 import os
 import re
+import threading
 from datetime import date as date_cls, timedelta
 
 from fastapi import FastAPI, UploadFile, File, Form, Header, Query, HTTPException, Depends
@@ -1820,14 +1822,23 @@ async def body_sensation_advice(
     user: dict | None = Depends(_get_optional_user),
 ):
     try:
-        from emotion_rec.services.body_sensation import generate_body_sensation_advice
+        from emotion_rec.services.body_sensation import generate_body_sensation_advice, body_advice_deadline_seconds
     except ModuleNotFoundError:
-        from services.body_sensation import generate_body_sensation_advice  # type: ignore
+        from services.body_sensation import generate_body_sensation_advice, body_advice_deadline_seconds  # type: ignore
 
     try:
         payload_data = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
         payload_data["participant_code"] = _resolve_code(user, payload.participant_code)
-        result = await run_in_threadpool(generate_body_sensation_advice, payload_data)
+        cancel_event = threading.Event()
+        try:
+            result = await asyncio.wait_for(run_in_threadpool(generate_body_sensation_advice, payload_data, cancel_event=cancel_event),
+                                            timeout=body_advice_deadline_seconds())
+        except Exception as error:
+            cancel_event.set()
+            # This path skips external providers, model downloads and database I/O.
+            reason = "request_timeout" if isinstance(error, asyncio.TimeoutError) else "processing_error"
+            print(f"[body_sensation] bounded fallback: {reason} type={type(error).__name__}")
+            result = generate_body_sensation_advice(payload_data, fallback_reason=reason)
         return Response(
             content=json.dumps(result, ensure_ascii=False),
             media_type="application/json; charset=utf-8",

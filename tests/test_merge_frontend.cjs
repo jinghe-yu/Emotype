@@ -45,7 +45,7 @@ function bodyContext(language) {
   };
   const localStorage = {getItem(key) {return key === 'emomirror.lang' ? language : null;}, setItem() {}};
   const window = {location: {search: '?participant_code=qa_from_url'}};
-  const context = vm.createContext({window, document, localStorage, URLSearchParams});
+  const context = vm.createContext({window, document, localStorage, URLSearchParams, AbortController, setTimeout, clearTimeout});
   vm.runInContext(i18n, context);
   context.SharedI18N = window.SharedI18N;
   vm.runInContext(body, context);
@@ -178,7 +178,7 @@ async function run() {
       isLoggedIn: () => true, getUser: () => ({username: 'qa_logged_in'}),
       async apiJson(url, options) {
         sent = {url, payload: JSON.parse(options.body)};
-        return {advice: {summary: 'Specific advice', source: 'llm'}};
+        return {advice: {summary: 'Specific advice', source: 'llm', steps: ['Take a short pause.']}};
       }
     };
     state.pairs.push({region: state.selectedRegion, symptom: state.selectedSymptom, severity: 3, duration: '2 hours'});
@@ -192,6 +192,7 @@ async function run() {
     assert.equal(sent.payload.include_recent_diaries, true);
     assert.equal(sent.payload.recent_diary_limit, 5);
     assert.equal(sent.payload.symptoms.length, 1);
+    assert.equal(sent.payload.ui_language, language);
     assert.equal(elements.get('bodySubmitBtn').disabled, false);
     assert.equal(elements.get('bodySubmitBtn').textContent, bodyVm.SharedI18N.t('body.generate'));
   }

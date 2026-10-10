@@ -482,9 +482,27 @@ function renderAdvice(data) {
   const links = data?.possible_links || advice.possible_links || [];
   const safety = data?.safety || {};
   const context = data?.emotion_context || {};
+  const language = data?.language === "zh" ? "zh" : data?.language === "en" ? "en" : bodyLang();
+  const adviceText = (zh, en) => language === "zh" ? zh : en;
   els.adviceEmpty.style.display = "none";
   els.adviceContent.textContent = "";
+  els.adviceContent.setAttribute("lang", language === "zh" ? "zh-CN" : "en");
   document.querySelector(".body-advice-column")?.classList.add("is-visible");
+
+  if (advice.title) {
+    const title = document.createElement("h3");
+    title.textContent = advice.title;
+    els.adviceContent.appendChild(title);
+  }
+  const fallback = !String(advice.source || "").startsWith("llm");
+  if (fallback) {
+    const notice = document.createElement("p");
+    notice.className = "body-fallback-notice";
+    notice.textContent = data?.debug?.fallback_reason === "safety_priority"
+      ? adviceText("已优先显示安全提醒，未等待模型生成。", "Safety reminders are shown first, without waiting for the model.")
+      : adviceText("模型暂不可用，以下为一般性保底提醒，并非模型生成的个性化分析。", "The model is unavailable. These are general guidance reminders, not a model-generated personalized analysis.");
+    els.adviceContent.appendChild(notice);
+  }
 
   const summary = document.createElement("p");
   summary.className = "body-advice-summary-v2";
@@ -500,22 +518,23 @@ function renderAdvice(data) {
 
   const meta = document.createElement("div");
   meta.className = "body-advice-meta-v2";
-  meta.textContent = `${bodyT("body.emotionClue", bodyText("情绪线索", "Emotion clue"))}: ${bodyEmotionLabel(context.primary_label) || "-"} · ${bodyT("body.source", bodyText("来源", "Source"))}: ${advice.source || "-"}`;
+  const emotionLabel = language === bodyLang() ? bodyEmotionLabel(context.primary_label) : context.primary_label;
+  meta.textContent = `${adviceText("情绪线索", "Emotion clue")}: ${emotionLabel || "-"} · ${adviceText("来源", "Source")}: ${fallback ? adviceText("一般性提醒", "General guidance") : adviceText("模型生成", "Model-generated")}`;
   els.adviceContent.appendChild(meta);
 
-  appendAdviceList(bodyT("body.bodyEmotionLinks", bodyText("身体-情绪线索", "Body-emotion links")), links.map((item) => `${item.label || item.type || bodyText("线索", "Clue")}: ${item.explanation || item.description || ""}`));
-  appendAdviceList(bodyT("body.stepsToTry", bodyText("可尝试步骤", "Steps to try")), advice.steps || [], true);
+  appendAdviceList(adviceText("身体-情绪线索", "Body-emotion links"), links.map((item) => `${item.label || item.type || adviceText("线索", "Clue")}: ${item.explanation || item.description || ""}`));
+  appendAdviceList(adviceText("可尝试步骤", "Steps to try"), advice.steps || [], true);
 
   if (advice.reflection_prompt) {
-    appendAdviceParagraph(bodyT("body.reflectionPrompt", bodyText("继续记录提示", "Reflection prompt")), advice.reflection_prompt);
+    appendAdviceParagraph(adviceText("继续记录提示", "Reflection prompt"), advice.reflection_prompt);
   }
 
   if (safety.risk_level === "high" && Array.isArray(safety.red_flags) && safety.red_flags.length) {
-    appendAdviceList(bodyT("body.riskWarning", bodyText("风险提示", "Risk warning")), safety.red_flags);
+    appendAdviceList(adviceText("风险提示", "Risk warning"), safety.red_flags);
   }
 
-  appendAdviceList(bodyText("何时求助", "When to seek help"), advice.when_to_seek_help || []);
-  appendAdviceParagraph(bodyT("body.note", bodyText("说明", "Note")), bodyT("body.nonMedicalNote", bodyText("这些建议不构成医疗诊断；如果症状明显、持续或让你担心，请优先寻求专业帮助。", "These suggestions are not a medical diagnosis. If symptoms are strong, persistent, or worrying, seek professional help first.")));
+  appendAdviceList(adviceText("何时求助", "When to seek help"), advice.when_to_seek_help || []);
+  appendAdviceParagraph(adviceText("说明", "Note"), adviceText("这些建议不构成医疗诊断；如果症状明显、持续或让你担心，请优先寻求专业帮助。", "These suggestions are not a medical diagnosis. If symptoms are strong, persistent, or worrying, seek professional help first."));
 }
 
 function appendAdviceParagraph(label, text) {
@@ -559,26 +578,49 @@ async function submitAdvice() {
     free_text: els.freeText.value.trim(),
     include_recent_diaries: true,
     recent_diary_limit: 5,
+    ui_language: bodyLang(),
   };
 
   state.submitting = true;
+  const controller = new AbortController();
+  els.submitBtn.setAttribute("aria-busy", "true");
   els.submitBtn.disabled = true;
   els.submitBtn.textContent = bodyT("body.generating", bodyText("生成中", "Generating"));
   setAdviceState(bodyT("body.generating", bodyText("生成中", "Generating")));
   setSubmitStatus(bodyT("body.generateWait", bodyText("正在生成建议，可能需要几秒。", "Generating advice. This may take a few seconds.")));
+  let timeoutTimer;
+  const deadline = new Promise((_, reject) => {
+    timeoutTimer = setTimeout(() => {
+      reject(new Error(bodyT("body.requestTimeout", bodyText("等待超时，请重试；未产生新的建议。", "The request timed out. Please retry; no new advice was received."))));
+      controller.abort();
+    }, 45000);
+  });
+  const progressTimer = setTimeout(() => {
+    if (state.submitting) setSubmitStatus(bodyT("body.stillGenerating", bodyText("仍在等待模型。若超时，系统会返回一般性提醒。", "Still waiting for the model. General guidance will be returned if it times out.")));
+  }, 8000);
   try {
-    const data = await apiJson("/body-sensation/advice", {
+    const data = await Promise.race([apiJson("/body-sensation/advice", {
       method: "POST",
       body: JSON.stringify(payload),
-    });
+      signal: controller.signal,
+    }), deadline]);
+    if (!data || data.status === "error" || !data.advice?.summary || !Array.isArray(data.advice.steps)) {
+      throw new Error(data?.message || bodyT("body.invalidAdvice", bodyText("服务未返回完整建议，请重试。", "The service did not return complete advice. Please retry.")));
+    }
     renderAdvice(data);
-    setAdviceState(bodyT("body.generated", bodyText("已生成", "Generated")));
-    setSubmitStatus(bodyFormat("body.generatedStatus", bodyText("建议已生成。来源：{source}", "Advice generated. Source: {source}"), { source: data?.advice?.source || "-" }));
+    const modelResult = String(data.advice.source || "").startsWith("llm");
+    setAdviceState(modelResult ? bodyT("body.generated", bodyText("已生成", "Generated")) : bodyT("body.generalGuidance", bodyText("一般性提醒", "General guidance")));
+    setSubmitStatus(modelResult
+      ? bodyT("body.modelAdviceReady", bodyText("建议已生成；语言跟随本次输入。", "Advice is ready, in the language of your current input."))
+      : bodyT("body.fallbackAdviceReady", bodyText("已返回一般性保底提醒；你可以稍后重新生成。", "General guidance is available. You can try generating again later.")));
   } catch (error) {
     setAdviceState(bodyT("body.generateFailed", bodyText("生成失败", "Failed")));
     setSubmitStatus(bodyFormat("body.requestFailed", bodyText("请求失败：{message}", "Request failed: {message}"), { message: error.message }));
   } finally {
+    clearTimeout(timeoutTimer);
+    clearTimeout(progressTimer);
     state.submitting = false;
+    els.submitBtn.setAttribute("aria-busy", "false");
     els.submitBtn.disabled = false;
     els.submitBtn.textContent = bodyT("body.generate", bodyText("生成身体感受建议", "Generate Body Advice"));
   }

@@ -130,6 +130,7 @@
 
 .body-panel-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
@@ -193,7 +194,7 @@
 
 .body-pair-card-v2 {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 10px;
@@ -208,6 +209,7 @@
   font-size: 13px;
   line-height: 1.35;
 }
+.body-pair-card-v2 > div { min-width: 0; overflow-wrap: break-word; }
 
 .body-pair-card-v2 span {
   display: block;
@@ -287,6 +289,11 @@
   background: #fff;
   font-size: 13px;
   font-weight: 800;
+  max-width: 100%;
+  white-space: normal;
+  word-break: normal;
+  line-height: 1.4;
+  padding-block: 7px;
   transition: background 120ms, color 120ms, border-color 120ms;
 }
 
@@ -314,7 +321,7 @@
 
 .body-detail-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -368,7 +375,17 @@
 .body-advice-content {
   display: grid;
   gap: 14px;
+  max-width: 90ch;
+  min-width: 0;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
+
+.body-text-control, .body-text-control input { min-width: 0; max-width: 100%; }
+.body-text-control input { width: 100%; }
+.body-advice-section-v2 li + li { margin-top: 8px; }
+.body-fallback-notice { margin: 0; padding: 10px 12px; border-radius: 8px; background: #fffbeb; color: #92400e; font-size: 13px; line-height: 1.65; }
+.body-advice-content[lang="zh-CN"] .body-advice-section-v2 span { letter-spacing: normal; }
 
 .body-advice-content:empty {
   display: none;

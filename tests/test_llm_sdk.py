@@ -70,6 +70,19 @@ def test_real_sdk_timeout_is_bounded_and_classified(monkeypatch):
             llm.chat([{"role": "user", "content": "Hello"}], raise_on_error=True)
 
 
+def test_body_timeout_override_is_transport_option_not_model_parameter(monkeypatch):
+    requests = []
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(200, json=completion('{"title":"Advice","summary":"A short pause.","steps":["Pause"]}'))
+    with install_transport(monkeypatch, respond):
+        result = llm.chat_json([{"role": "user", "content": "Body advice JSON"}], timeout=25,
+                               retries=0, non_thinking=True, raise_on_error=True)
+    assert result["steps"] == ["Pause"] and len(requests) == 1
+    assert "timeout" not in json.loads(requests[0].content)
+    assert requests[0].extensions["timeout"]["read"] == 25
+
+
 def test_missing_key_and_disabled_are_distinguishable(monkeypatch):
     monkeypatch.setenv("LLM_ENABLED", "true")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "")
