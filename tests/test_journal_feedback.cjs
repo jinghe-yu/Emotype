@@ -17,7 +17,7 @@ function element() {
     classList: {toggle(name, active) {if (active) classes.add(name); else classes.delete(name);}}, classes};
 }
 const flush = async () => {for (let i = 0; i < 12; i++) await Promise.resolve();};
-function harness(language = 'en', mode = null, blockedStorage = false) {
+function harness(language = 'en', mode = null, blockedStorage = false, demo = false) {
   const requests = [], renders = [], applied = [], events = [], tasks = new Map();
   let now = 0, nextId = 1, localCalls = 0;
   const window = {};
@@ -31,7 +31,8 @@ function harness(language = 'en', mode = null, blockedStorage = false) {
   vm.runInContext(fs.readFileSync(path.join(root, 'i18n.js'), 'utf8'), context);
   Object.assign(context, {
     AbortController, CustomEvent: class {constructor(type, options) {this.type = type; this.detail = options.detail;}},
-    journalText: {value: 'First entry'}, currentDesign: {}, currentVAMapping: null, analysisCache: new Map(),
+    journalText: {value: demo ? 'Starter sample' : 'First entry'}, currentDesign: {}, currentVAMapping: null, analysisCache: new Map(),
+    journalDemoActive: demo, journalDemoText: demo ? 'Starter sample' : null,
     activeAnalysisController: null, inflightAnalysisKey: '', analyzeTimer: null, analysisSequence: 0,
     scheduledAnalysisKey: null, renderedAnalysisKey: null, analysisPhase: 'idle', isComposingJournal: false,
     JOURNAL_ANALYSIS_DELAY_MS: 3000, JOURNAL_REQUEST_TIMEOUT_MS: 60000,
@@ -56,7 +57,7 @@ function harness(language = 'en', mode = null, blockedStorage = false) {
     }
   });
   vm.runInContext(preference, context);
-  context.realtimeFeedbackEnabled = context.readFeedbackPreference();
+  context.realtimeFeedbackEnabled = demo || context.readFeedbackPreference();
   vm.runInContext(modeSync + helpers, context);
   async function advance(ms) {
     const target = now + ms;
@@ -84,10 +85,75 @@ function harness(language = 'en', mode = null, blockedStorage = false) {
 }
 
 async function run() {
-  // New/default users and previous implicit live preferences all start in wait mode.
+  // Personal writing still defaults to wait; a marked, untouched demo starts live.
   for (const mode of [null, '', 'invalid', 'wait']) assert.equal(harness('en', mode).context.realtimeFeedbackEnabled, false);
   assert.equal(harness('en', null, true).context.realtimeFeedbackEnabled, false);
   assert.equal(harness('en', 'live').context.realtimeFeedbackEnabled, true);
+
+  const startup = source.slice(source.indexOf('// Only the untouched'), source.indexOf('let activeAnalysisController ='));
+  for (const saved of [null, 'wait', 'live']) {
+    for (const value of ['Starter sample', 'Restored personal journal']) {
+      const initial = vm.createContext({journalText: {dataset: {demo: 'true'}, defaultValue: 'Starter sample', value},
+        localStorage: {getItem: () => saved}});
+      vm.runInContext(startup, initial);
+      const flags = vm.runInContext('({journalDemoActive, realtimeFeedbackEnabled})', initial);
+      assert.equal(flags.journalDemoActive, value === 'Starter sample');
+      assert.equal(flags.realtimeFeedbackEnabled, value === 'Starter sample', 'restored personal text defaults to LLM, regardless of prior preference');
+    }
+  }
+
+  for (const language of ['en', 'zh']) {
+    const demo = harness(language, 'wait', false, true), d = demo.context;
+    d.scheduleAnalysis();
+    assert.equal(d.analysisPhase, 'demo');
+    assert.equal(d.realtimeFeedbackToggle['aria-pressed'], 'true');
+    assert.equal(d.typeStage['aria-busy'], 'false');
+    assert.equal(d.ready, false, 'a local demo must not claim to be an LLM result');
+    assert.equal(demo.localCalls(), 1);
+    assert.match(d.analysisNoticeText.textContent, language === 'en' ? /sample.*instant feedback/ : /初始示例.*即时反馈/);
+    const renderCount = demo.renders.length;
+    demo.input('Starter sample'); await demo.advance(120000); await d.analyzeText();
+    assert.equal(demo.requests.length, 0, 'untouched starter demo must never automatically call LLM');
+    assert.equal(demo.tasks.size, 0);
+    assert.equal(demo.renders.length, renderCount, 'idle demo keeps stable animations');
+    assert.equal(d.readFeedbackPreference(), false, 'the demo must not overwrite the personal mode preference');
+    demo.input('My own journal');
+    assert.equal(d.journalDemoActive, false);
+    assert.equal(d.realtimeFeedbackEnabled, false);
+    assert.equal(d.llmFeedbackToggle['aria-pressed'], 'true');
+    assert.equal(Object.keys(demo.renders.at(-1).design).length, 0, 'personal writing must not inherit demo effects');
+    await demo.advance(3000);
+    assert.equal(demo.requests.length, 1);
+    assert.equal(JSON.parse(demo.requests[0].options.body).text, 'My own journal');
+    assert.equal(demo.localCalls(), 1);
+    d.selectFeedbackMode(true); demo.input('I explicitly prefer live feedback');
+    assert.equal(d.realtimeFeedbackEnabled, true, 'the demo transition only happens once, preserving later manual choices');
+    assert.equal(demo.localCalls(), 2);
+    demo.input('Starter sample');
+    assert.equal(d.journalDemoActive, false, 'undoing back to the sample must not reactivate the initial demo');
+  }
+
+  const clearedDemo = harness('en', 'live', false, true);
+  clearedDemo.context.scheduleAnalysis(); clearedDemo.input(''); await clearedDemo.advance(120000);
+  assert.equal(clearedDemo.context.realtimeFeedbackEnabled, false);
+  assert.equal(clearedDemo.context.analysisPhase, 'idle'); assert.equal(clearedDemo.requests.length, 0);
+  const voiceDemo = harness('en', null, false, true);
+  voiceDemo.context.scheduleAnalysis(); voiceDemo.context.journalText.value += ' Transcribed words';
+  voiceDemo.context.scheduleAnalysis();
+  assert.equal(voiceDemo.context.realtimeFeedbackEnabled, false, 'voice/prompt changes share the first-edit transition');
+  const imeDemo = harness('zh', null, false, true);
+  imeDemo.context.scheduleAnalysis(); imeDemo.context.startJournalComposition();
+  imeDemo.input('jin', true);
+  assert.equal(imeDemo.context.realtimeFeedbackEnabled, false);
+  assert.equal(Object.keys(imeDemo.renders.at(-1).design).length, 0);
+  await imeDemo.advance(10000); assert.equal(imeDemo.requests.length, 0);
+  imeDemo.context.journalText.value = '今天感觉平静'; imeDemo.context.finishJournalComposition();
+  await imeDemo.advance(3000); assert.equal(imeDemo.requests.length, 1);
+  const manualDemo = harness('en', null, false, true);
+  manualDemo.context.scheduleAnalysis(); manualDemo.context.selectFeedbackMode(false);
+  await manualDemo.advance(3000); assert.equal(manualDemo.requests.length, 1, 'explicitly choosing LLM can analyze the sample');
+  manualDemo.context.selectFeedbackMode(true); await manualDemo.advance(120000);
+  assert.equal(manualDemo.context.analysisPhase, 'demo'); assert.equal(manualDemo.requests.length, 1);
 
   const h = harness(), c = h.context;
   c.syncRealtimeFeedbackToggle();
@@ -223,13 +289,14 @@ async function run() {
   assert.match(bindings, /compositionstart.*startJournalComposition/);
   assert.match(bindings, /compositionend.*finishJournalComposition/);
   const boot = source.slice(source.indexOf('async function boot('), source.indexOf('const I18N ='));
-  assert.doesNotMatch(boot, /localDesign\(/, 'initial boot must not flash local emotion typography');
+  assert.match(boot, /scheduleAnalysis\(\);[\s\S]*await loadParticipantEntries\(\)/, 'demo rendering must not wait for account history');
   for (const name of ['essay.html', 'index.html']) {
     const html = fs.readFileSync(path.join(root, name), 'utf8');
-    assert.match(html, /id="llmFeedbackToggle" aria-pressed="true"/);
-    assert.match(html, /id="realtimeFeedbackToggle" aria-pressed="false"/);
+    assert.match(html, /id="journalText"\s+data-demo="true"/);
+    assert.match(html, /id="llmFeedbackToggle" aria-pressed="false"/);
+    assert.match(html, /id="realtimeFeedbackToggle" aria-pressed="true"/);
     assert.match(html, /id="analysisNotice"[^>]+role="status"/);
   }
-  console.log('Journal feedback checks passed: wait default, 3-second debounce, stable cache, no polling, mode switches, stale-response guards, IME, timeout, explicit retry and synchronized multimodal analysis.');
+  console.log('Journal feedback checks passed: instant starter demo, one-time switch to LLM for personal writing, manual choices, 3-second debounce, cache, no polling, cancellation, IME, timeout, retry and multimodal analysis.');
 }
 run().catch(error => {console.error(error); process.exitCode = 1;});

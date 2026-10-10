@@ -93,7 +93,7 @@ for (const name of ['index.html', 'essay.html']) {
     assert.equal([...html.matchAll(new RegExp(`id="${id}"`, 'g'))].length, 1, `${name}: missing or duplicate ${id}`);
   }
   assert.match(html, /Real-time Feedback/);
-  assert.match(html, /\/static\/app\.js\?v=20261010d/);
+  assert.match(html, /\/static\/app\.js\?v=20261011b/);
 }
 const essay = fs.readFileSync(path.join(root, 'essay.html'), 'utf8');
 assert.match(essay, /id="journalImageInput"/);
@@ -105,6 +105,7 @@ function analysisContext() {
   const context = vm.createContext({
     journalText: {value: 'First entry'}, currentDesign: {}, currentVAMapping: null,
     realtimeFeedbackEnabled: true, analysisCache: new Map(), analysisSequence: 0,
+    journalDemoActive: false, journalDemoText: null,
     activeAnalysisController: null, inflightAnalysisKey: '', analyzeTimer: null, AbortController,
     scheduledAnalysisKey: null, renderedAnalysisKey: null, analysisPhase: 'idle', isComposingJournal: false,
     JOURNAL_ANALYSIS_DELAY_MS: 3000, JOURNAL_REQUEST_TIMEOUT_MS: 60000,

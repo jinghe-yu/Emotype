@@ -179,12 +179,15 @@ let participant = JSON.parse(localStorage.getItem("emomirror.participant") || "n
 let currentAnalysisPayload = {};
 let detectedOverallMapping = null;
 let currentVAMapping = null;
+// Only the untouched, explicitly marked starter text is a local-only demo.
+const journalDemoText = journalText.dataset.demo === "true" ? journalText.defaultValue : null;
+let journalDemoActive = journalDemoText !== null && journalText.value === journalDemoText;
 // A new preference key avoids inheriting the previous implicit live-feedback default.
 function readFeedbackPreference() {
   try { return localStorage.getItem("emomirror.feedbackMode") === "live"; }
   catch (_) { return false; }
 }
-let realtimeFeedbackEnabled = readFeedbackPreference();
+let realtimeFeedbackEnabled = journalDemoText !== null ? journalDemoActive : readFeedbackPreference();
 let activeAnalysisController = null;
 let analysisSequence = 0;
 let inflightAnalysisKey = "";
@@ -513,7 +516,7 @@ function syncRealtimeFeedbackToggle() {
   if (realtimeFeedbackToggle) {
     realtimeFeedbackToggle.classList.toggle("is-active", realtimeFeedbackEnabled);
     realtimeFeedbackToggle.setAttribute("aria-pressed", String(realtimeFeedbackEnabled));
-    realtimeFeedbackToggle.title = t("journal.liveFeedbackHint");
+    realtimeFeedbackToggle.title = t(journalDemoActive ? "journal.demoFeedbackHint" : "journal.liveFeedbackHint");
   }
   if (llmFeedbackToggle) {
     llmFeedbackToggle.classList.toggle("is-active", !realtimeFeedbackEnabled);
@@ -1141,6 +1144,25 @@ function rerenderCurrentTypography() {
   renderPlainMirror(journalText.value);
 }
 
+function leaveJournalDemoIfEdited() {
+  if (!journalDemoActive || journalText.value === journalDemoText) return false;
+  journalDemoActive = false;
+  // The demo is not a saved preference: personal writing always starts in wait mode.
+  realtimeFeedbackEnabled = false;
+  scheduledAnalysisKey = null;
+  syncRealtimeFeedbackToggle();
+  return true;
+}
+
+function showJournalDemo() {
+  cancelJournalAnalysis();
+  scheduledAnalysisKey = analysisKeyFor(journalText.value);
+  renderedAnalysisKey = null;
+  syncRealtimeFeedbackToggle();
+  renderLocalFeedback(journalText.value);
+  setAnalysisState("demo");
+}
+
 function setAnalysisState(phase) {
   analysisPhase = phase;
   const pending = phase === "typing" || phase === "waiting";
@@ -1148,11 +1170,12 @@ function setAnalysisState(phase) {
   if (analysisNotice) analysisNotice.dataset.state = phase;
   if (retryAnalysisButton) retryAnalysisButton.hidden = phase !== "error";
   const statusKeys = {
-    idle: "journal.ready", typing: "journal.waitingForPause",
+    idle: "journal.ready", demo: "journal.demoReady", typing: "journal.waitingForPause",
     waiting: "journal.waitingForLlm", ready: "journal.llmReady", error: "journal.analysisUnavailable",
   };
   const noticeKeys = {
-    idle: "journal.waitFeedbackHint",
+    idle: realtimeFeedbackEnabled ? "journal.liveFeedbackHint" : "journal.waitFeedbackHint",
+    demo: "journal.demoFeedbackHint",
     typing: realtimeFeedbackEnabled ? "journal.typingLive" : "journal.typingWait",
     waiting: realtimeFeedbackEnabled ? "journal.pendingLive" : "journal.pendingWait",
     ready: "journal.resultStable",
@@ -1184,10 +1207,15 @@ function presentAnalysis(payload, key) {
 }
 
 function selectFeedbackMode(live) {
+  leaveJournalDemoIfEdited();
   if (realtimeFeedbackEnabled === live) return;
   realtimeFeedbackEnabled = live;
   try { localStorage.setItem("emomirror.feedbackMode", live ? "live" : "wait"); } catch (_) {}
   syncRealtimeFeedbackToggle();
+  if (journalDemoActive && live) {
+    showJournalDemo();
+    return;
+  }
   const text = journalText.value;
   const key = analysisKeyFor(text);
   if (analysisCache.has(key)) presentAnalysis(analysisCache.get(key), key);
@@ -1199,7 +1227,8 @@ function selectFeedbackMode(live) {
     }
     setAnalysisState(analysisPhase);
   }
-  // Switching preview modes must not cancel, duplicate or restart a model request.
+  if (journalDemoActive) scheduleAnalysis({ force: true });
+  // For personal writing, preview switches do not restart a model request.
 }
 
 function startJournalComposition() {
@@ -1215,6 +1244,12 @@ function finishJournalComposition() {
 }
 
 function handleJournalInput(event) {
+  const leftDemo = leaveJournalDemoIfEdited();
+  if (leftDemo && (isComposingJournal || event.isComposing)) {
+    renderPlainMirror();
+    clearPendingEmotionPanel();
+    setAnalysisState("typing");
+  }
   if (!isComposingJournal && !event.isComposing) scheduleAnalysis();
 }
 
@@ -1222,6 +1257,11 @@ async function analyzeText(textSnapshot = journalText.value) {
   const text = String(textSnapshot || "");
   const key = analysisKeyFor(text);
   if (isComposingJournal || analysisKeyFor(journalText.value) !== key) return;
+  leaveJournalDemoIfEdited();
+  if (journalDemoActive && realtimeFeedbackEnabled) {
+    if (analysisPhase !== "demo") showJournalDemo();
+    return;
+  }
   scheduledAnalysisKey = key;
   clearTimeout(analyzeTimer);
   analyzeTimer = null;
@@ -1281,11 +1321,16 @@ async function analyzeText(textSnapshot = journalText.value) {
 }
 
 function scheduleAnalysis({ force = false } = {}) {
+  leaveJournalDemoIfEdited();
   if (isComposingJournal) return;
   const text = journalText.value;
   const key = analysisKeyFor(text);
   // Duplicate input events and idle time must not reset the debounce or animations.
   if (!force && scheduledAnalysisKey === key) return;
+  if (journalDemoActive && realtimeFeedbackEnabled) {
+    showJournalDemo();
+    return;
+  }
   scheduledAnalysisKey = key;
   cancelJournalAnalysis();
   renderedAnalysisKey = null;
@@ -1683,11 +1728,10 @@ async function boot() {
   if (initialView && document.getElementById(initialView)) switchView(initialView);
   renderChips("");
   renderPrompts(localEmotion("").prompts);
-  // Never flash a local emotional design before the default wait mode initializes.
-  renderPlainMirror(journalText.value);
+  // Show the starter demo immediately, without waiting for account history or an LLM.
+  scheduleAnalysis();
   if (participantCode()) await loadParticipantEntries();
   else renderHome();
-  scheduleAnalysis();
 }
 
 /* ============================================================
