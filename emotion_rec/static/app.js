@@ -6,6 +6,10 @@ const analysisStatus = document.querySelector("#analysisStatus");
 const intensityRange = document.querySelector("#intensityRange");
 const homeIntensity = document.querySelector("#homeIntensity");
 const realtimeFeedbackToggle = document.querySelector("#realtimeFeedbackToggle");
+const llmFeedbackToggle = document.querySelector("#llmFeedbackToggle");
+const analysisNotice = document.querySelector("#analysisNotice");
+const analysisNoticeText = document.querySelector("#analysisNoticeText");
+const retryAnalysisButton = document.querySelector("#retryAnalysisButton");
 const llmReadyBadge = document.querySelector("#llmReadyBadge");
 const primaryEmotion = document.querySelector("#primaryEmotion");
 const reflectionText = document.querySelector("#reflectionText");
@@ -175,11 +179,22 @@ let participant = JSON.parse(localStorage.getItem("emomirror.participant") || "n
 let currentAnalysisPayload = {};
 let detectedOverallMapping = null;
 let currentVAMapping = null;
-let realtimeFeedbackEnabled = localStorage.getItem("emomirror.realtimeFeedback") !== "false";
+// A new preference key avoids inheriting the previous implicit live-feedback default.
+function readFeedbackPreference() {
+  try { return localStorage.getItem("emomirror.feedbackMode") === "live"; }
+  catch (_) { return false; }
+}
+let realtimeFeedbackEnabled = readFeedbackPreference();
 let activeAnalysisController = null;
 let analysisSequence = 0;
 let inflightAnalysisKey = "";
 const analysisCache = new Map();
+const JOURNAL_ANALYSIS_DELAY_MS = 3000;
+const JOURNAL_REQUEST_TIMEOUT_MS = 60000;
+let scheduledAnalysisKey = null;
+let renderedAnalysisKey = null;
+let analysisPhase = "idle";
+let isComposingJournal = false;
 let saveFeedbackTimer = null;
 
 function vaMapper() {
@@ -495,12 +510,16 @@ function setLlmReady(isReady) {
 }
 
 function syncRealtimeFeedbackToggle() {
-  if (!realtimeFeedbackToggle) return;
-  realtimeFeedbackToggle.classList.toggle("is-active", realtimeFeedbackEnabled);
-  realtimeFeedbackToggle.setAttribute("aria-pressed", String(realtimeFeedbackEnabled));
-  realtimeFeedbackToggle.title = realtimeFeedbackEnabled
-    ? uiText("实时反馈已开启：等待 LLM 时先显示本地动态反馈", "Real-time feedback on: local motion is shown while LLM finishes")
-    : uiText("实时反馈已关闭：仅显示 LLM 渲染结果", "Real-time feedback off: only LLM rendering is shown");
+  if (realtimeFeedbackToggle) {
+    realtimeFeedbackToggle.classList.toggle("is-active", realtimeFeedbackEnabled);
+    realtimeFeedbackToggle.setAttribute("aria-pressed", String(realtimeFeedbackEnabled));
+    realtimeFeedbackToggle.title = t("journal.liveFeedbackHint");
+  }
+  if (llmFeedbackToggle) {
+    llmFeedbackToggle.classList.toggle("is-active", !realtimeFeedbackEnabled);
+    llmFeedbackToggle.setAttribute("aria-pressed", String(!realtimeFeedbackEnabled));
+    llmFeedbackToggle.title = t("journal.waitFeedbackHint");
+  }
 }
 
 function hexToRgba(hex, alpha) {
@@ -1073,9 +1092,25 @@ function renderPrompts(prompts) {
 }
 
 function renderPlainMirror(text = journalText.value) {
+  renderedAnalysisKey = null;
   currentDesign = {};
   currentVAMapping = null;
   renderTypography(text, {}, null);
+}
+
+function clearPendingEmotionPanel() {
+  // Do not save a previous snapshot's inferred emotion with newly edited text.
+  currentAnalysisPayload = {};
+  detectedOverallMapping = null;
+  currentOverallMapping = null;
+  currentCandidates = [];
+  selectedLabel = "";
+  primaryEmotion.textContent = uiText("未明确", "Unclear");
+  reflectionText.textContent = "";
+  confidenceMeter.style.width = "0%";
+  emotionDot.style.background = palette.mauve;
+  emotionChips.textContent = "";
+  updateVAControl({ valence: 0, arousal: 0, color: palette.mauve });
 }
 
 function renderLocalFeedback(text = journalText.value, { updatePanel = true } = {}) {
@@ -1106,56 +1141,138 @@ function rerenderCurrentTypography() {
   renderPlainMirror(journalText.value);
 }
 
-async function analyzeText(textSnapshot = journalText.value) {
-  const text = textSnapshot;
+function setAnalysisState(phase) {
+  analysisPhase = phase;
+  const pending = phase === "typing" || phase === "waiting";
+  typeStage.setAttribute("aria-busy", String(pending));
+  if (analysisNotice) analysisNotice.dataset.state = phase;
+  if (retryAnalysisButton) retryAnalysisButton.hidden = phase !== "error";
+  const statusKeys = {
+    idle: "journal.ready", typing: "journal.waitingForPause",
+    waiting: "journal.waitingForLlm", ready: "journal.llmReady", error: "journal.analysisUnavailable",
+  };
+  const noticeKeys = {
+    idle: "journal.waitFeedbackHint",
+    typing: realtimeFeedbackEnabled ? "journal.typingLive" : "journal.typingWait",
+    waiting: realtimeFeedbackEnabled ? "journal.pendingLive" : "journal.pendingWait",
+    ready: "journal.resultStable",
+    error: realtimeFeedbackEnabled ? "journal.failedLive" : "journal.failedWait",
+  };
+  setStatus(t(statusKeys[phase]));
+  if (analysisNoticeText) analysisNoticeText.textContent = t(noticeKeys[phase]);
+  setLlmReady(phase === "ready");
+}
+
+function cancelJournalAnalysis() {
+  clearTimeout(analyzeTimer);
+  analyzeTimer = null;
+  // Invalidate even aborted responses for the same text (e.g. type, undo, retry).
+  analysisSequence += 1;
+  if (activeAnalysisController) activeAnalysisController.abort();
+  activeAnalysisController = null;
+  inflightAnalysisKey = "";
+}
+
+function presentAnalysis(payload, key) {
+  if (renderedAnalysisKey !== key) {
+    applyAnalysis(payload, { markComplete: true, allowLocalDesignFallback: realtimeFeedbackEnabled });
+    renderedAnalysisKey = key;
+    // Multimodal consumers share the settled snapshot, not a separate typing timer.
+    document.dispatchEvent(new CustomEvent("journal-analysis-ready", { detail: { text: key } }));
+  }
+  setAnalysisState("ready");
+}
+
+function selectFeedbackMode(live) {
+  if (realtimeFeedbackEnabled === live) return;
+  realtimeFeedbackEnabled = live;
+  try { localStorage.setItem("emomirror.feedbackMode", live ? "live" : "wait"); } catch (_) {}
+  syncRealtimeFeedbackToggle();
+  const text = journalText.value;
   const key = analysisKeyFor(text);
+  if (analysisCache.has(key)) presentAnalysis(analysisCache.get(key), key);
+  else {
+    if (live && text.trim()) renderLocalFeedback(text);
+    else {
+      renderPlainMirror(text);
+      clearPendingEmotionPanel();
+    }
+    setAnalysisState(analysisPhase);
+  }
+  // Switching preview modes must not cancel, duplicate or restart a model request.
+}
+
+function startJournalComposition() {
+  isComposingJournal = true;
+  cancelJournalAnalysis();
+  scheduledAnalysisKey = null;
+  setAnalysisState("typing");
+}
+
+function finishJournalComposition() {
+  isComposingJournal = false;
+  scheduleAnalysis();
+}
+
+function handleJournalInput(event) {
+  if (!isComposingJournal && !event.isComposing) scheduleAnalysis();
+}
+
+async function analyzeText(textSnapshot = journalText.value) {
+  const text = String(textSnapshot || "");
+  const key = analysisKeyFor(text);
+  if (isComposingJournal || analysisKeyFor(journalText.value) !== key) return;
+  scheduledAnalysisKey = key;
+  clearTimeout(analyzeTimer);
+  analyzeTimer = null;
   if (!text.trim()) {
-    if (activeAnalysisController) activeAnalysisController.abort();
-    activeAnalysisController = null;
-    inflightAnalysisKey = "";
-    setLlmReady(false);
-    applyAnalysis({ emotion: localEmotion(text), va_mapping: localVAMapping(text), llm_design: {} });
-    setStatus("Ready");
+    cancelJournalAnalysis();
+    renderPlainMirror(text);
+    setAnalysisState("idle");
     return;
   }
 
   if (analysisCache.has(key)) {
-    if (analysisKeyFor(journalText.value) !== key) return;
-    applyAnalysis(analysisCache.get(key), { markComplete: true, allowLocalDesignFallback: realtimeFeedbackEnabled });
-    setStatus("Live");
+    presentAnalysis(analysisCache.get(key), key);
     return;
   }
 
   if (inflightAnalysisKey === key && activeAnalysisController) return;
 
   if (activeAnalysisController) activeAnalysisController.abort();
-  activeAnalysisController = new AbortController();
+  const controller = new AbortController();
+  activeAnalysisController = controller;
   inflightAnalysisKey = key;
   const requestId = ++analysisSequence;
-  setLlmReady(false);
-  setStatus(realtimeFeedbackEnabled ? "Mirroring" : uiText("等待 LLM", "Waiting for LLM"));
+  setAnalysisState("waiting");
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    if (requestId === analysisSequence && analysisKeyFor(journalText.value) === key) setAnalysisState("error");
+    controller.abort();
+  }, JOURNAL_REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetch("/analyze-text", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, intensity: 1 }),
-      signal: activeAnalysisController.signal,
+      signal: controller.signal,
     });
     if (!response.ok) throw new Error("analysis failed");
     const payload = await response.json();
-    if (requestId !== analysisSequence || analysisKeyFor(journalText.value) !== key) return;
+    if (controller.signal.aborted || requestId !== analysisSequence || analysisKeyFor(journalText.value) !== key) return;
+    if (!payload.llm_design || typeof payload.llm_design !== "object" || !Object.keys(payload.llm_design).length) {
+      throw new Error("No typography returned");
+    }
     analysisCache.set(key, payload);
     if (analysisCache.size > 24) analysisCache.delete(analysisCache.keys().next().value);
-    applyAnalysis(payload, { markComplete: true, allowLocalDesignFallback: realtimeFeedbackEnabled });
-    setStatus("Live");
+    presentAnalysis(payload, key);
   } catch (error) {
-    if (error.name === "AbortError") return;
-    if (analysisKeyFor(journalText.value) === key) {
-      setStatus(realtimeFeedbackEnabled ? "Local mirror" : uiText("LLM 暂不可用", "LLM unavailable"));
-      setLlmReady(false);
-    }
+    if (error.name === "AbortError" && !timedOut) return;
+    if (requestId === analysisSequence && analysisKeyFor(journalText.value) === key) setAnalysisState("error");
   } finally {
+    clearTimeout(timeout);
     if (requestId === analysisSequence) {
       activeAnalysisController = null;
       inflightAnalysisKey = "";
@@ -1163,39 +1280,38 @@ async function analyzeText(textSnapshot = journalText.value) {
   }
 }
 
-function scheduleAnalysis() {
-  clearTimeout(analyzeTimer);
-  if (activeAnalysisController) {
-    activeAnalysisController.abort();
-    activeAnalysisController = null;
-    inflightAnalysisKey = "";
-  }
-
+function scheduleAnalysis({ force = false } = {}) {
+  if (isComposingJournal) return;
   const text = journalText.value;
   const key = analysisKeyFor(text);
-  setLlmReady(false);
+  // Duplicate input events and idle time must not reset the debounce or animations.
+  if (!force && scheduledAnalysisKey === key) return;
+  scheduledAnalysisKey = key;
+  cancelJournalAnalysis();
+  renderedAnalysisKey = null;
 
   if (!text.trim()) {
-    applyAnalysis({ emotion: localEmotion(text), va_mapping: localVAMapping(text), llm_design: {} });
-    setStatus("Ready");
+    applyAnalysis({ emotion: localEmotion(text), va_mapping: localVAMapping(text), llm_design: {} }, { allowLocalDesignFallback: false });
+    setAnalysisState("idle");
     return;
   }
 
   if (analysisCache.has(key)) {
-    applyAnalysis(analysisCache.get(key), { markComplete: true, allowLocalDesignFallback: realtimeFeedbackEnabled });
-    setStatus("Live");
+    presentAnalysis(analysisCache.get(key), key);
     return;
   }
 
   if (realtimeFeedbackEnabled) {
     renderLocalFeedback(text);
-    setStatus("Mirroring");
   } else {
     renderPlainMirror(text);
-    setStatus(uiText("等待 LLM", "Waiting for LLM"));
+    clearPendingEmotionPanel();
   }
-
-  analyzeTimer = setTimeout(() => analyzeText(text), 650);
+  setAnalysisState("typing");
+  analyzeTimer = setTimeout(() => {
+    analyzeTimer = null;
+    return analyzeText(text);
+  }, JOURNAL_ANALYSIS_DELAY_MS);
 }
 
 function saveEntries() {
@@ -1474,19 +1590,24 @@ function bindEvents() {
     button.addEventListener("click", () => switchView(button.dataset.view));
   });
 
-  journalText.addEventListener("input", scheduleAnalysis);
+  journalText.addEventListener("input", handleJournalInput);
+  journalText.addEventListener("compositionstart", startJournalComposition);
+  journalText.addEventListener("compositionend", finishJournalComposition);
   intensityRange.addEventListener("input", () => {
     if (homeIntensity) homeIntensity.textContent = `${intensityRange.value}%`;
     rerenderCurrentTypography();
   });
   if (realtimeFeedbackToggle) {
     realtimeFeedbackToggle.addEventListener("click", () => {
-      realtimeFeedbackEnabled = !realtimeFeedbackEnabled;
-      localStorage.setItem("emomirror.realtimeFeedback", String(realtimeFeedbackEnabled));
-      syncRealtimeFeedbackToggle();
-      scheduleAnalysis();
+      selectFeedbackMode(true);
     });
   }
+  if (llmFeedbackToggle) llmFeedbackToggle.addEventListener("click", () => selectFeedbackMode(false));
+  if (retryAnalysisButton) retryAnalysisButton.addEventListener("click", () => {
+    if (analysisPhase !== "error" || isComposingJournal) return;
+    scheduleAnalysis({ force: true });
+    void analyzeText();
+  });
   saveEntry.addEventListener("click", saveCurrentEntry);
   applyCustomLabel.addEventListener("click", () => {
     const label = customEmotionLabel.value.trim();
@@ -1562,7 +1683,8 @@ async function boot() {
   if (initialView && document.getElementById(initialView)) switchView(initialView);
   renderChips("");
   renderPrompts(localEmotion("").prompts);
-  renderTypography(journalText.value, localDesign(journalText.value), localVAMapping(journalText.value));
+  // Never flash a local emotional design before the default wait mode initializes.
+  renderPlainMirror(journalText.value);
   if (participantCode()) await loadParticipantEntries();
   else renderHome();
   scheduleAnalysis();
@@ -1590,7 +1712,7 @@ const I18N = {
     "journal.eyebrow": "表达性写作", "journal.title": "今天的记录", "journal.ready": "就绪",
     "journal.modeType": "文字输入", "journal.modeVoice": "语音转文字",
     "journal.placeholder": "写下发生了什么。可以具体、模糊、矛盾，或者不确定。",
-    "journal.intensity": "镜像反馈强度", "journal.realtimeFeedback": "实时反馈", "journal.llmReady": "LLM 已完成", "journal.startVoice": "开始语音", "journal.save": "保存记录",
+    "journal.intensity": "镜像反馈强度", "journal.realtimeFeedback": "实时反馈", "journal.llmReady": "镜像已就绪", "journal.startVoice": "开始语音", "journal.save": "保存记录",
     "journal.uploadImage": "上传图片", "journal.combinedEmotion": "综合情绪：",
     "journal.mirror.eyebrow": "情绪动态字体", "journal.mirror.title": "实时镜像",
     "journal.detected": "识别结果", "journal.customLabel": "自定义标签",
@@ -1636,7 +1758,7 @@ const I18N = {
     "journal.eyebrow": "Expressive writing", "journal.title": "Journal", "journal.ready": "Ready",
     "journal.modeType": "Type", "journal.modeVoice": "Voice to text",
     "journal.placeholder": "Write what happened. Be specific, vague, contradictory, or unsure.",
-    "journal.intensity": "Feedback intensity", "journal.realtimeFeedback": "Real-time Feedback", "journal.llmReady": "LLM ready", "journal.startVoice": "Start voice", "journal.save": "Save entry",
+    "journal.intensity": "Feedback intensity", "journal.realtimeFeedback": "Real-time Feedback", "journal.llmReady": "Mirror ready", "journal.startVoice": "Start voice", "journal.save": "Save entry",
     "journal.uploadImage": "Upload images", "journal.combinedEmotion": "Combined emotion:",
     "journal.mirror.eyebrow": "Kinetic affective type", "journal.mirror.title": "Live mirror",
     "journal.detected": "Detected emotion", "journal.customLabel": "Custom label",
@@ -1691,6 +1813,7 @@ function applyI18n() {
     primaryEmotion.textContent = displayEmotionLabel(selectedLabel || primaryEmotion.textContent);
   }
   syncRealtimeFeedbackToggle();
+  setAnalysisState(analysisPhase);
 }
 
 function initI18n() {

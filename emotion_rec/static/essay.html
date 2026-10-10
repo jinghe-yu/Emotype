@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title data-ui-copy="情绪随笔 | EmoBridge">Journal | EmoBridge</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20261010c" />
+  <link rel="stylesheet" href="/static/styles.css?v=20261010d" />
 </head>
 <body>
 
@@ -88,12 +88,19 @@
             <span data-ui-copy="综合情绪：">Combined emotion:</span><strong id="journalCombinedLabel"></strong>
           </div>
 
+          <div class="feedback-mode-control">
+            <span class="panel-label" id="feedbackModeLabel" data-i18n="journal.feedbackMode">Feedback mode</span>
+            <div class="feedback-mode-options" role="group" aria-labelledby="feedbackModeLabel">
+              <button class="feedback-toggle is-active" type="button" id="llmFeedbackToggle" aria-pressed="true" data-i18n="journal.waitFeedback">Wait for LLM</button>
+              <button class="feedback-toggle" type="button" id="realtimeFeedbackToggle" aria-pressed="false" data-i18n="journal.realtimeFeedback">Real-time Feedback</button>
+            </div>
+          </div>
+
           <div class="editor-tools">
             <label class="slider-control" for="intensityRange">
               <span data-i18n="journal.intensity">Feedback intensity</span>
               <input id="intensityRange" type="range" min="0" max="100" value="80" />
             </label>
-            <button class="feedback-toggle is-active" type="button" id="realtimeFeedbackToggle" aria-pressed="true" data-i18n="journal.realtimeFeedback">Real-time Feedback</button>
             <button class="warm-btn ghost" type="button" id="voiceButton" data-i18n="journal.startVoice">Start voice</button>
             <button class="warm-btn primary" type="button" id="saveEntry" data-i18n="journal.save">Save entry</button>
           </div>
@@ -109,13 +116,18 @@
             <div class="mirror-status">
               <span class="llm-ready-badge" id="llmReadyBadge" aria-live="polite" hidden>
                 <span class="llm-ready-icon" aria-hidden="true"></span>
-                <span data-i18n="journal.llmReady">LLM ready</span>
+                <span data-i18n="journal.llmReady">Mirror ready</span>
               </span>
               <span class="emotion-dot" id="emotionDot" aria-hidden="true"></span>
             </div>
           </div>
 
-          <div class="type-stage" id="typeStage" aria-live="polite"></div>
+          <div class="analysis-notice" id="analysisNotice" data-state="idle" role="status" aria-live="polite" aria-atomic="true">
+            <span class="analysis-notice-indicator" aria-hidden="true"></span>
+            <span id="analysisNoticeText" data-i18n="journal.waitFeedbackHint">Analyze once after a 3-second pause. Show plain text until the result arrives, with no local emotion effects.</span>
+            <button class="warm-btn ghost" id="retryAnalysisButton" type="button" data-i18n="journal.retryAnalysis" hidden>Retry analysis</button>
+          </div>
+          <div class="type-stage" id="typeStage" aria-live="polite" aria-busy="false"></div>
 
           <div class="emotion-panel">
             <div>
@@ -412,7 +424,9 @@ window.EmoAffectDuo = (function () {
             if (window.EmoAffectDuo) window.EmoAffectDuo.setContent(a);
             // Trigger combined analysis if text is present
             var textEl = document.getElementById('journalText');
-            if (textEl && textEl.value.trim()) _triggerCombinedAnalysis(textEl.value.trim(), a);
+            if (textEl && textEl.value.trim() && typeof analysisPhase !== 'undefined' && analysisPhase === 'ready') {
+              _triggerCombinedAnalysis(textEl.value.trim(), a);
+            }
           })
           .catch(function () {});
       };
@@ -421,7 +435,21 @@ window.EmoAffectDuo = (function () {
     input.value = '';
   });
 
+  var _combinedText = null;
+  var _combinedImage = null;
+  var _combinedSequence = 0;
+  var _combinedDisplayedImage = null;
   function _triggerCombinedAnalysis(text, imageAnalysis) {
+    var existingCard = document.getElementById('combinedAffectCard');
+    if (existingCard && existingCard.dataset.textSnapshot === text && _combinedDisplayedImage === imageAnalysis) {
+      existingCard.hidden = false;
+      document.getElementById('journalCombinedEmotion').style.display = 'flex';
+      return;
+    }
+    if (_combinedText === text && _combinedImage === imageAnalysis) return;
+    _combinedText = text;
+    _combinedImage = imageAnalysis;
+    var requestId = ++_combinedSequence;
     var combinedEl = document.getElementById('journalCombinedEmotion');
     var labelEl = document.getElementById('journalCombinedLabel');
     var dotEl = document.getElementById('journalCombinedDot');
@@ -440,7 +468,10 @@ window.EmoAffectDuo = (function () {
     })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (!data || !data.combined_emotion) return;
+        var textEl = document.getElementById('journalText');
+        if (requestId !== _combinedSequence || !textEl || textEl.value.trim() !== text ||
+            window._journalImageAnalyses.indexOf(imageAnalysis) < 0) return;
+        if (!data || !data.combined_emotion) { _combinedText = null; _combinedImage = null; return; }
         var c = data.combined_emotion;
         var label = c.primary_emotion || c.label || SharedI18N.pick('综合', "Combined");
         var color = c.color || '#8b5cf6';
@@ -457,31 +488,40 @@ window.EmoAffectDuo = (function () {
                                  ' · A ' + (c.arousal >= 0 ? '+' : '') + c.arousal.toFixed(2);
           }
           card.hidden = false;
+          card.dataset.textSnapshot = text;
+          _combinedDisplayedImage = imageAnalysis;
         }
       })
-      .catch(function() {});
+      .catch(function() {
+        if (requestId === _combinedSequence) { _combinedText = null; _combinedImage = null; }
+      });
   }
 
-  // Re-trigger combined analysis when text changes (debounced 800ms)
-  var _combinedDebounce = null;
+  // Reuse Journal's completed snapshot; no independent 800ms model timer.
   var textArea = document.getElementById('journalText');
   if (textArea) {
     textArea.addEventListener('input', function() {
-      clearTimeout(_combinedDebounce);
-      _combinedDebounce = setTimeout(function() {
-        var analyses = window._journalImageAnalyses;
-        if (analyses && analyses.length > 0 && textArea.value.trim()) {
-          _triggerCombinedAnalysis(textArea.value.trim(), analyses[0]);
-        }
-      }, 800);
+      if (_combinedText === textArea.value.trim()) return;
+      _combinedSequence += 1;
+      _combinedText = null;
+      _combinedImage = null;
+      var combinedEl = document.getElementById('journalCombinedEmotion');
+      var card = document.getElementById('combinedAffectCard');
+      if (combinedEl) combinedEl.style.display = 'none';
+      if (card) card.hidden = true;
     });
   }
+  document.addEventListener('journal-analysis-ready', function(event) {
+    var analyses = window._journalImageAnalyses;
+    var text = String(event.detail.text || '').trim();
+    if (analyses.length && text) _triggerCombinedAnalysis(text, analyses[0]);
+  });
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="/static/vaMapper.js?v=20261010a" defer></script>
-<script src="/static/i18n.js?v=20261010c"></script>
+<script src="/static/i18n.js?v=20261010d"></script>
 <script src="/static/auth.js?v=20261010c"></script>
-<script src="/static/app.js?v=20261010c" defer></script>
+<script src="/static/app.js?v=20261010d" defer></script>
 </body>
 </html>

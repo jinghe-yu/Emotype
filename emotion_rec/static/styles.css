@@ -618,7 +618,7 @@ textarea:focus {
 /* Editor tools row */
 .editor-tools {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: end;
   gap: 10px;
 }
@@ -631,6 +631,8 @@ textarea:focus {
 }
 .slider-control input[type=range] { accent-color: var(--amber); width: 100%; }
 
+.feedback-mode-control { display: grid; gap: 8px; }
+.feedback-mode-options { display: flex; flex-wrap: wrap; gap: 8px; }
 .feedback-toggle {
   display: inline-flex;
   align-items: center;
@@ -664,6 +666,40 @@ textarea:focus {
 .feedback-toggle.is-active::before {
   background: #10b981;
   box-shadow: 0 0 0 3px rgba(16,185,129,0.16);
+}
+.feedback-toggle:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+.analysis-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 10px;
+  background: rgba(239,246,255,0.75);
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.6;
+}
+#analysisNoticeText { flex: 1; min-width: 0; }
+.analysis-notice-indicator {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border: 2px solid #93c5fd;
+  border-radius: 50%;
+}
+.analysis-notice[data-state="waiting"] .analysis-notice-indicator {
+  border-top-color: #2563eb;
+  animation: journal-wait-spin 1s linear infinite;
+}
+.analysis-notice[data-state="ready"] .analysis-notice-indicator { background: #10b981; border-color: #10b981; }
+.analysis-notice[data-state="error"] { border-color: #fcd34d; background: #fffbeb; }
+#retryAnalysisButton { min-height: 32px; font-size: 12px; }
+#retryAnalysisButton[hidden] { display: none; }
+@keyframes journal-wait-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .analysis-notice[data-state="waiting"] .analysis-notice-indicator { animation: none; }
 }
 
 /* Status pill */
@@ -1416,6 +1452,8 @@ textarea:focus {
   .app-shell { padding: 8px; }
   .home-stats, .entry-list { grid-template-columns: 1fr; }
   .editor-tools { grid-template-columns: 1fr; }
+  .analysis-notice { flex-wrap: wrap; }
+  #retryAnalysisButton { margin-left: 22px; }
   .section-head, .emotion-panel, .label-editor { flex-direction: column; align-items: flex-start; }
   .emotion-panel { grid-template-columns: 1fr; }
   h1 { font-size: 38px; }

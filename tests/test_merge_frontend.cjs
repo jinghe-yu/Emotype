@@ -15,6 +15,7 @@ class Element {
     this.value = '';
     this._text = '';
     this.listeners = {};
+    this.dataset = {};
     this.classes = new Set();
     this.style = {setProperty(name, value) {this[name] = value;}};
     this.classList = {
@@ -28,6 +29,7 @@ class Element {
   append(...nodes) {this.children.push(...nodes);}
   appendChild(node) {this.append(node); return node;}
   addEventListener(name, listener) {this.listeners[name] = listener;}
+  setAttribute(name, value) {this[name] = value;}
 }
 
 function bodyContext(language) {
@@ -86,12 +88,12 @@ for (const language of ['en', 'zh']) {
 
 for (const name of ['index.html', 'essay.html']) {
   const html = fs.readFileSync(path.join(root, name), 'utf8');
-  for (const id of ['realtimeFeedbackToggle', 'llmReadyBadge', 'intensityRange', 'voiceButton',
+  for (const id of ['realtimeFeedbackToggle', 'llmFeedbackToggle', 'analysisNotice', 'retryAnalysisButton', 'llmReadyBadge', 'intensityRange', 'voiceButton',
     'saveEntry', 'typeStage', 'customEmotionLabel', 'vaPlane']) {
     assert.equal([...html.matchAll(new RegExp(`id="${id}"`, 'g'))].length, 1, `${name}: missing or duplicate ${id}`);
   }
   assert.match(html, /Real-time Feedback/);
-  assert.match(html, /\/static\/app\.js\?v=20261010c/);
+  assert.match(html, /\/static\/app\.js\?v=20261010d/);
 }
 const essay = fs.readFileSync(path.join(root, 'essay.html'), 'utf8');
 assert.match(essay, /id="journalImageInput"/);
@@ -104,6 +106,13 @@ function analysisContext() {
     journalText: {value: 'First entry'}, currentDesign: {}, currentVAMapping: null,
     realtimeFeedbackEnabled: true, analysisCache: new Map(), analysisSequence: 0,
     activeAnalysisController: null, inflightAnalysisKey: '', analyzeTimer: null, AbortController,
+    scheduledAnalysisKey: null, renderedAnalysisKey: null, analysisPhase: 'idle', isComposingJournal: false,
+    JOURNAL_ANALYSIS_DELAY_MS: 3000, JOURNAL_REQUEST_TIMEOUT_MS: 60000,
+    typeStage: new Element(), analysisNotice: new Element(), analysisNoticeText: new Element(), retryAnalysisButton: new Element(),
+    primaryEmotion: new Element(), reflectionText: new Element(), confidenceMeter: new Element(), emotionDot: new Element(), emotionChips: new Element(),
+    palette: {mauve: '#BEAACF'}, updateVAControl() {},
+    document: {dispatchEvent() {}}, CustomEvent: class {constructor(type, options) {this.type = type; this.detail = options.detail;}},
+    t: key => key,
     analysisKeyFor: text => String(text || ''), getIntensity: () => 0.8,
     uiText: (_, en) => en, setStatus() {}, setLlmReady() {},
     localVAMapping: () => ({}), localEmotion: () => ({}), localDesign: () => ({'0': {animation: 'pulse-scale'}}),
