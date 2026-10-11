@@ -28,12 +28,16 @@ const stage = new Node('stage');
 let insertions = new Map();
 const context = vm.createContext({
   typeStage: stage,
+  getIntensity: () => 0.8,
   document: {createElement: tag => new Node(tag), createDocumentFragment: () => new Node('fragment')},
   buildEmojiInsertions: () => insertions,
   applyIntensity: value => value,
   animationClass: value => value ? `anim-${value}` : '',
   createEmojiGlyph(emoji) {const node = new Node('span'); node.className = 'glyph emoji'; node.textContent = emoji; return node;}
 });
+const motion = source.slice(source.indexOf('function applyMotionIntensity('), source.indexOf('function analysisKeyFor('));
+assert.ok(motion.startsWith('function applyMotionIntensity('));
+vm.runInContext(motion, context);
 vm.runInContext(renderer, context);
 const render = (text, design = {}) => context.renderTypography(text, design);
 const words = () => stage.children.filter(node => node.className === 'type-word');
@@ -42,6 +46,8 @@ const restored = () => stage.textContent.replace(/\u00a0/g, ' ');
 render("EmoMirror can't split well-being, don't or I'm.");
 assert.deepEqual(words().map(node => node.textContent), ['EmoMirror', "can't", 'split', 'well-being,', "don't", 'or', "I'm."]);
 assert.equal(restored(), "EmoMirror can't split well-being, don't or I'm.");
+assert.equal(stage.style['--motion-intensity'], '0.80');
+assert.equal(stage.style['--pulse-lift'], '-3.20px');
 assert.ok(words().every(word => word.children.every(glyph => glyph.className.includes('glyph'))));
 
 render('中文 mixed 情绪 café naïve B2B co‑operate');

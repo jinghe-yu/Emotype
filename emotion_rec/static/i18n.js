@@ -8,6 +8,66 @@
 
   var I18N = {
   "zh": {
+    "essay.moment": "随手记",
+    "essay.diary": "日记本",
+    "journal.uploadImage": "上传图片",
+    "journal.combinedEmotion": "综合情绪：",
+    "journal.realtimeFeedback": "实时反馈",
+    "journal.llmReady": "镜像已就绪",
+    "journal.feedbackMode": "反馈模式",
+    "journal.waitFeedback": "等待 LLM",
+    "journal.demoReady": "示例 · 即时预览",
+    "journal.demoFeedbackHint": "初始示例使用本地即时反馈。开始编辑后将自动切换为等待 LLM 模式。",
+    "journal.waitFeedbackHint": "停止输入 3 秒后分析一次；结果返回前只显示普通文字，不使用本地情绪效果。",
+    "journal.liveFeedbackHint": "输入时显示本地即时反馈，停止输入 3 秒后更新为服务返回的结果。",
+    "journal.waitingForPause": "等待输入完成",
+    "journal.waitingForLlm": "正在等待 LLM",
+    "journal.typingWait": "等待输入完成：停止输入 3 秒后开始分析，当前仅显示普通文字。",
+    "journal.typingLive": "当前为本地即时预览。停止输入 3 秒后开始分析。",
+    "journal.pendingWait": "正在等待 LLM 返回结果…完成后才显示情绪字体效果。",
+    "journal.pendingLive": "正在等待 LLM 返回结果…当前显示的是本地即时预览。",
+    "journal.resultStable": "结果已就绪。内容不变时，效果将保持稳定，不会重复请求。",
+    "journal.analysisUnavailable": "分析暂不可用",
+    "journal.failedWait": "暂未收到字体结果（请求失败或超时）。已保留普通文字，可手动重试。",
+    "journal.failedLive": "暂未收到字体结果（请求失败或超时）。当前保留本地预览，可手动重试。",
+    "journal.retryAnalysis": "重试分析",
+    "journal.vaUser": "你 · 文字/语音",
+    "journal.vaImage": "画面 · 图片",
+    "journal.multimodal": "多模态对照",
+    "journal.userAffect": "文字 / 语音",
+    "journal.contentAffect": "画面 / 图片",
+    "journal.combinedAffect": "综合情绪",
+    "body.durationDefault": "下午开始",
+    "body.loading": "读取中",
+    "body.loadedRecords": "已读取 {count} 条",
+    "body.loadFailed": "读取失败",
+    "body.noRecentContext": "没有读取到最近随手记。仍然可以只根据本次身体感受生成建议。",
+    "body.recordFallback": "记录",
+    "body.pairUnit": "组",
+    "body.noDuration": "未填写持续时间",
+    "body.delete": "删除",
+    "body.generated": "已生成",
+    "body.generating": "生成中",
+    "body.generateWait": "正在生成建议…若模型超时，将返回一般性保底提醒。",
+    "body.requestTimeout": "等待超时，请重试；未产生新的建议。",
+    "body.stillGenerating": "仍在等待模型。若超时，系统会返回一般性提醒。",
+    "body.invalidAdvice": "服务未返回完整建议，请重试。",
+    "body.generalGuidance": "一般性提醒",
+    "body.modelAdviceReady": "建议已生成；语言跟随本次输入。",
+    "body.fallbackAdviceReady": "已返回一般性保底提醒；你可以稍后重新生成。",
+    "body.durationPlaceholder": "例如：从今天下午开始",
+    "body.generatedStatus": "建议已生成。来源：{source}",
+    "body.generateFailed": "生成失败",
+    "body.requestFailed": "请求失败：{message}",
+    "body.adviceGenerated": "建议已生成。",
+    "body.emotionClue": "情绪线索",
+    "body.source": "来源",
+    "body.bodyEmotionLinks": "身体-情绪线索",
+    "body.stepsToTry": "可尝试步骤",
+    "body.reflectionPrompt": "继续记录提示",
+    "body.riskWarning": "风险提示",
+    "body.note": "说明",
+    "body.nonMedicalNote": "这些建议不构成医疗诊断；如果症状明显、持续或让你担心，请优先寻求专业帮助。",
     "brand.tag": "情绪镜像日记",
     "nav.home": "首页",
     "nav.journal": "随手记",
@@ -255,6 +315,66 @@
     "body.adviceEmpty": "选择至少一个身体感受组合后生成建议。建议会保持温和、非诊断式，并保留必要的就医提醒。"
   },
   "en": {
+    "essay.moment": "Quick Journal",
+    "essay.diary": "Diary",
+    "journal.uploadImage": "Upload images",
+    "journal.combinedEmotion": "Combined emotion:",
+    "journal.realtimeFeedback": "Real-time Feedback",
+    "journal.llmReady": "Mirror ready",
+    "journal.feedbackMode": "Feedback mode",
+    "journal.waitFeedback": "Wait for LLM",
+    "journal.demoReady": "Demo · instant preview",
+    "journal.demoFeedbackHint": "This sample uses local instant feedback. Start editing to switch automatically to Wait for LLM.",
+    "journal.waitFeedbackHint": "Analyze once after a 3-second pause. Show plain text until the result arrives, with no local emotion effects.",
+    "journal.liveFeedbackHint": "Show local feedback as you type, then update to the returned result after a 3-second pause.",
+    "journal.waitingForPause": "Waiting for pause",
+    "journal.waitingForLlm": "Waiting for LLM",
+    "journal.typingWait": "Waiting for you to finish typing. Analysis starts after a 3-second pause; only plain text is shown for now.",
+    "journal.typingLive": "Showing a local live preview. Analysis starts after a 3-second pause.",
+    "journal.pendingWait": "Waiting for the LLM result… Emotion typography will appear only when the result arrives.",
+    "journal.pendingLive": "Waiting for the LLM result… The current effect is a local live preview.",
+    "journal.resultStable": "Your mirror is ready. The effect stays unchanged until you edit the text; no repeated requests.",
+    "journal.analysisUnavailable": "Analysis unavailable",
+    "journal.failedWait": "No typography result was received (request failed or timed out). Plain text is kept; you can retry.",
+    "journal.failedLive": "No typography result was received (request failed or timed out). The local preview is kept; you can retry.",
+    "journal.retryAnalysis": "Retry analysis",
+    "journal.vaUser": "You · text/voice",
+    "journal.vaImage": "Image · picture",
+    "journal.multimodal": "Multimodal comparison",
+    "journal.userAffect": "Text / voice",
+    "journal.contentAffect": "Image / picture",
+    "journal.combinedAffect": "Combined emotion",
+    "body.durationDefault": "Started this afternoon",
+    "body.loading": "Loading",
+    "body.loadedRecords": "Loaded {count} records",
+    "body.loadFailed": "Load failed",
+    "body.noRecentContext": "No recent journal entries were loaded. You can still generate advice from this body sensation only.",
+    "body.recordFallback": "Record",
+    "body.pairUnit": "pairs",
+    "body.noDuration": "No duration entered",
+    "body.delete": "Delete",
+    "body.generated": "Generated",
+    "body.generating": "Generating",
+    "body.generateWait": "Generating advice… General guidance will be returned if the model times out.",
+    "body.requestTimeout": "The request timed out. Please retry; no new advice was received.",
+    "body.stillGenerating": "Still waiting for the model. General guidance will be returned if it times out.",
+    "body.invalidAdvice": "The service did not return complete advice. Please retry.",
+    "body.generalGuidance": "General guidance",
+    "body.modelAdviceReady": "Advice is ready, in the language of your current input.",
+    "body.fallbackAdviceReady": "General guidance is available. You can try generating again later.",
+    "body.durationPlaceholder": "e.g., since this afternoon",
+    "body.generatedStatus": "Advice generated. Source: {source}",
+    "body.generateFailed": "Failed",
+    "body.requestFailed": "Request failed: {message}",
+    "body.adviceGenerated": "Advice generated.",
+    "body.emotionClue": "Emotion clue",
+    "body.source": "Source",
+    "body.bodyEmotionLinks": "Body-emotion links",
+    "body.stepsToTry": "Steps to try",
+    "body.reflectionPrompt": "Reflection prompt",
+    "body.riskWarning": "Risk warning",
+    "body.note": "Note",
+    "body.nonMedicalNote": "These suggestions are not a medical diagnosis. If symptoms are strong, persistent, or worrying, seek professional help first.",
     "brand.tag": "Emotion Mirror Journal",
     "nav.home": "Home",
     "nav.journal": "Journal",
@@ -741,7 +861,7 @@
   "正在回复": "Replying",
   "消息输入框": "Message input",
   "发送": "Send",
-  "情绪随笔��栏目": "Journal sections",
+  "情绪随笔栏目": "Journal sections",
   "候选情绪标签": "Candidate emotion labels",
   "自定义情绪标签": "Custom emotion label",
   "坐标拖拽手柄": "Drag to adjust coordinates",
@@ -1068,6 +1188,24 @@
   "唤醒度 (Arousal)": "Arousal"
 };
   var EMOTION_LABELS_EN = {
+    "恐惧": "Fear",
+    "高兴": "Happy",
+    "复杂情绪": "Mixed emotions",
+    "身体不适": "Physical discomfort",
+    "警觉": "Alert",
+    "纠结": "Torn",
+    "压力过载": "Overloaded",
+    "回避": "Avoidant",
+    "否认式表达": "Denial",
+    "身体紧绷": "Body tension",
+    "不满": "Dissatisfied",
+    "羞耻": "Shame",
+    "羞愧": "Ashamed",
+    "委屈": "Hurt",
+    "压抑": "Suppressed",
+    "慌张": "Panicked",
+    "平淡": "Neutral",
+    "自责": "Self-blame",
   "中性": "Neutral",
   "未明确": "Unclear",
   "不明确": "Unclear",
@@ -1162,7 +1300,14 @@
     return getCurrentLang() === "zh" ? value : (UI_COPY[value] || value);
   }
   function label(value) {
-    return getCurrentLang() === "zh" ? value : (EMOTION_LABELS_EN[value] || value);
+    if (getCurrentLang() === "zh" || typeof value !== "string") return value;
+    var direct = EMOTION_LABELS_EN[value.trim()];
+    if (direct) return direct;
+    // Preserve v2-new's compound labels without translating custom user text.
+    return value.split(/(\/|／|、|，|,|·|\s+\+\s+)/g).map(function (part) {
+      var translated = EMOTION_LABELS_EN[part.trim()];
+      return translated ? part.replace(part.trim(), translated) : part;
+    }).join("");
   }
 
   function getCurrentLang() {
@@ -1184,6 +1329,10 @@
     document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
       var key = el.getAttribute("data-i18n-placeholder");
       if (key) el.placeholder = t(key);
+    });
+    document.querySelectorAll("[data-i18n-value]").forEach(function (el) {
+      var key = el.getAttribute("data-i18n-value");
+      if (key) el.value = t(key);
     });
     applyCopy();
   }

@@ -17,6 +17,20 @@
   // Pages that REQUIRE auth (everything else is public)
   var PROTECTED_PAGES = ["/profile", "/admin"];
 
+  function authLang() {
+    try {
+      return global.SharedI18N && global.SharedI18N.lang
+        ? global.SharedI18N.lang()
+        : (localStorage.getItem("emomirror.lang") === "zh" ? "zh" : "en");
+    } catch (e) {
+      return "en";
+    }
+  }
+
+  function authText(zh, en) {
+    return authLang() === "en" ? en : zh;
+  }
+
   // --- Token & User management ---
 
   function _load() {

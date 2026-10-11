@@ -122,7 +122,7 @@ def test_llm_request_uses_non_thinking_only_for_deepseek(monkeypatch):
     assert "extra_body" not in captured
 
 
-def test_body_fallback_english_logs_notes(client, monkeypatch):
+def test_body_fallback_follows_chinese_input_and_logs_notes(client, monkeypatch):
     monkeypatch.setenv("BODY_ADVICE_LLM_ENABLED", "false")
     data = client.post("/body-sensation/advice", json={
         "participant_code": "qa_alice", "selected_regions": [{"id": "head", "label": "头部"}],
@@ -133,12 +133,13 @@ def test_body_fallback_english_logs_notes(client, monkeypatch):
     for field in ("advice", "safety", "possible_links", "emotion_context"):
         # Emotion evidence can quote original user input, so audit display labels separately.
         value = data[field] if field != "emotion_context" else data[field]["primary_label"]
-        assert not re.search(r"[\u3400-\u9fff]", json.dumps(value, ensure_ascii=False))
+        assert re.search(r"[\u3400-\u9fff]", json.dumps(value, ensure_ascii=False))
+    assert data["language"] == "zh"
     context = json.loads(repo.get_echo_context("qa_alice"))
     assert context["body_sense"][0]["notes"] == "今天喝水少"
     records = client.get("/api/records?participant_code=qa_alice&source=body_sensation").json()["records"]
     assert records[0]["summary"].startswith("Body Sense: ")
-    assert not re.search(r"[\u3400-\u9fff]", records[0]["summary"])
+    assert re.search(r"[\u3400-\u9fff]", records[0]["summary"])
 
 
 @pytest.mark.parametrize("symptom,region,notes", [
@@ -174,8 +175,9 @@ def test_positive_body_sensation_not_treated_as_severe_illness(monkeypatch):
     assert "positive sensations" in data["advice"]["summary"]
 
 
-def test_custom_chinese_body_labels_keep_original_but_feedback_is_english(monkeypatch):
+def test_custom_chinese_body_labels_keep_original_and_feedback_language(monkeypatch):
     monkeypatch.setenv("BODY_ADVICE_LLM_ENABLED", "false")
     data = body.generate_body_sensation_advice({"symptoms": ["奇怪的感觉"], "selected_regions": ["自定义部位"]})
     assert data["body_sensation"]["symptoms"][0]["raw"] == "奇怪的感觉"
-    assert not re.search(r"[\u3400-\u9fff]", json.dumps(data["advice"], ensure_ascii=False))
+    assert data["language"] == "zh"
+    assert re.search(r"[\u3400-\u9fff]", json.dumps(data["advice"], ensure_ascii=False))

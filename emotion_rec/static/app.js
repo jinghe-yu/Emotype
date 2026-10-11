@@ -5,6 +5,12 @@ const typeStage = document.querySelector("#typeStage");
 const analysisStatus = document.querySelector("#analysisStatus");
 const intensityRange = document.querySelector("#intensityRange");
 const homeIntensity = document.querySelector("#homeIntensity");
+const realtimeFeedbackToggle = document.querySelector("#realtimeFeedbackToggle");
+const llmFeedbackToggle = document.querySelector("#llmFeedbackToggle");
+const analysisNotice = document.querySelector("#analysisNotice");
+const analysisNoticeText = document.querySelector("#analysisNoticeText");
+const retryAnalysisButton = document.querySelector("#retryAnalysisButton");
+const llmReadyBadge = document.querySelector("#llmReadyBadge");
 const primaryEmotion = document.querySelector("#primaryEmotion");
 const reflectionText = document.querySelector("#reflectionText");
 const confidenceMeter = document.querySelector("#confidenceMeter");
@@ -40,6 +46,126 @@ const palette = {
   mauve: "#BEAACF",
 };
 
+const EMOTION_LABEL_EN = {
+  "暴怒": "Rage",
+  "烦躁": "Irritated",
+  "紧绷": "Tense",
+  "目瞪口呆": "Stunned",
+  "很生气": "Very angry",
+  "狂怒": "Fury",
+  "懊恼": "Frustrated",
+  "紧张": "Nervous",
+  "坐立不安": "Restless",
+  "愤怒": "Angry",
+  "害怕": "Afraid",
+  "恐惧": "Fear",
+  "生气": "Mad",
+  "焦虑": "Anxious",
+  "忧虑": "Worried",
+  "担心": "Concerned",
+  "憎恶": "Disgusted",
+  "厌恶": "Disgusted",
+  "恼火": "Annoyed",
+  "不耐烦": "Impatient",
+  "不安": "Uneasy",
+  "不高兴": "Unhappy",
+  "惊讶": "Surprised",
+  "乐观": "Optimistic",
+  "激动人心": "Thrilled",
+  "狂喜": "Ecstatic",
+  "兴奋": "Excited",
+  "欢快": "Cheerful",
+  "积极": "Positive",
+  "兴高采烈": "Elated",
+  "精力充沛": "Energetic",
+  "活跃": "Active",
+  "热情": "Enthusiastic",
+  "激动": "Excited",
+  "满意的": "Pleased",
+  "开心": "Happy",
+  "高兴": "Happy",
+  "专注": "Focused",
+  "自豪": "Proud",
+  "愉快": "Joyful",
+  "快乐": "Joy",
+  "满怀希望": "Hopeful",
+  "幸福": "Happy",
+  "闷闷不乐": "Gloomy",
+  "失望": "Disappointed",
+  "低落": "Low",
+  "冷漠": "Detached",
+  "消极": "Negative",
+  "忧郁": "Melancholy",
+  "挫败": "Defeated",
+  "悲伤": "Sad",
+  "无聊": "Bored",
+  "疏离": "Alienated",
+  "孤独": "Lonely",
+  "疲惫": "Tired",
+  "沮丧": "Downhearted",
+  "抑郁": "Depressed",
+  "耗尽": "Drained",
+  "厌倦": "Weary",
+  "绝望": "Hopeless",
+  "凄凉": "Desolate",
+  "精疲力竭": "Exhausted",
+  "安逸": "At ease",
+  "悠闲": "Leisurely",
+  "满足": "Satisfied",
+  "爱意": "Affection",
+  "自信感": "Confident",
+  "冷静": "Calm",
+  "安全": "Safe",
+  "满意": "Content",
+  "感恩": "Grateful",
+  "有成就感": "Accomplished",
+  "放松": "Relaxed",
+  "松弛": "Loose",
+  "安宁": "Peaceful",
+  "平衡": "Balanced",
+  "自在": "Comfortable",
+  "平静": "Calm",
+  "舒适": "Comfortable",
+  "无忧无虑": "Carefree",
+  "惬意": "Cozy",
+  "安详": "Serene",
+  "中性": "Neutral",
+  "复杂情绪": "Mixed emotions",
+  "不明确": "Unclear",
+  "未明确": "Unclear",
+  "身体不适": "Physical discomfort",
+  "警觉": "Alert",
+  "纠结": "Torn",
+  "压力过载": "Overloaded",
+  "回避": "Avoidant",
+  "否认式表达": "Denial",
+  "身体紧绷": "Body tension",
+  "不满": "Dissatisfied",
+  "羞耻": "Shame",
+  "羞愧": "Ashamed",
+  "委屈": "Hurt",
+  "压抑": "Suppressed",
+  "慌张": "Panicked",
+  "平淡": "Neutral",
+  "自责": "Self-blame",
+};
+
+function uiText(zh, en) {
+  return currentLang === "zh" ? zh : en;
+}
+
+function displayEmotionLabel(label) {
+  if (window.SharedI18N?.label) return window.SharedI18N.label(label);
+  const text = String(label || "");
+  if (currentLang !== "en" || !text) return text;
+  const direct = EMOTION_LABEL_EN[text.trim()];
+  if (direct) return direct;
+  return text.split(/(\/|／|、|，|,|·|\s+\+\s+)/g).map((part) => {
+    const trimmed = part.trim();
+    return EMOTION_LABEL_EN[trimmed] || part;
+  }).join("");
+}
+
 let entries = JSON.parse(localStorage.getItem("emomirror.entries") || "[]");
 let selectedLabel = "";
 let analyzeTimer = null;
@@ -53,6 +179,26 @@ let participant = JSON.parse(localStorage.getItem("emomirror.participant") || "n
 let currentAnalysisPayload = {};
 let detectedOverallMapping = null;
 let currentVAMapping = null;
+// Only the untouched, explicitly marked starter text is a local-only demo.
+const journalDemoText = journalText.dataset.demo === "true" ? journalText.defaultValue : null;
+let journalDemoActive = journalDemoText !== null && journalText.value === journalDemoText;
+// A new preference key avoids inheriting the previous implicit live-feedback default.
+function readFeedbackPreference() {
+  try { return localStorage.getItem("emomirror.feedbackMode") === "live"; }
+  catch (_) { return false; }
+}
+let realtimeFeedbackEnabled = journalDemoText !== null ? journalDemoActive : readFeedbackPreference();
+let activeAnalysisController = null;
+let analysisSequence = 0;
+let inflightAnalysisKey = "";
+const analysisCache = new Map();
+const JOURNAL_ANALYSIS_DELAY_MS = 3000;
+const JOURNAL_REQUEST_TIMEOUT_MS = 60000;
+let scheduledAnalysisKey = null;
+let renderedAnalysisKey = null;
+let analysisPhase = "idle";
+let isComposingJournal = false;
+let saveFeedbackTimer = null;
 
 function vaMapper() {
   return window.VAMapper;
@@ -165,6 +311,29 @@ function switchView(targetId) {
 
 function setStatus(text) {
   analysisStatus.textContent = text;
+}
+
+function showSaveFeedback(message, tone = "success") {
+  let feedback = document.getElementById("saveFeedback");
+  if (!feedback) {
+    feedback = document.createElement("div");
+    feedback.id = "saveFeedback";
+    feedback.className = "save-feedback";
+    feedback.setAttribute("role", "status");
+    feedback.setAttribute("aria-live", "polite");
+    feedback.hidden = true;
+    const editorTools = document.querySelector(".editor-tools");
+    if (editorTools) editorTools.insertAdjacentElement("afterend", feedback);
+  }
+  if (!feedback) return;
+  window.clearTimeout(saveFeedbackTimer);
+  feedback.textContent = message;
+  feedback.className = `save-feedback is-visible ${tone ? `is-${tone}` : ""}`;
+  feedback.hidden = false;
+  saveFeedbackTimer = window.setTimeout(() => {
+    feedback.classList.remove("is-visible");
+    feedback.hidden = true;
+  }, 3600);
 }
 
 function participantCode() {
@@ -295,7 +464,7 @@ function getIntensity() {
 }
 
 function animationClass(name) {
-  if (!name || getIntensity() < 0.25) return "";
+  if (!name || getIntensity() < 0.05) return "";
   return `anim-${String(name).replace(/[^a-z0-9-]/gi, "").toLowerCase()}`;
 }
 
@@ -305,10 +474,55 @@ function applyIntensity(style = {}) {
   if (next.scale) {
     next.scale = 1 + (Number(next.scale) - 1) * intensity;
   }
-  if (intensity < 0.35) {
+  if (next.weight) {
+    next.weight = Math.round(560 + (Number(next.weight) - 560) * intensity);
+  }
+  if (intensity < 0.05) {
     delete next.animation;
   }
   return next;
+}
+
+function applyMotionIntensity() {
+  if (!typeStage) return;
+  const intensity = getIntensity();
+  typeStage.style.setProperty("--motion-intensity", intensity.toFixed(2));
+  typeStage.style.setProperty("--pulse-lift", `${(-4 * intensity).toFixed(2)}px`);
+  typeStage.style.setProperty("--pulse-scale", (1 + 0.06 * intensity).toFixed(3));
+  typeStage.style.setProperty("--shake-x-neg", `${(-1 * intensity).toFixed(2)}px`);
+  typeStage.style.setProperty("--shake-x-pos", `${(2 * intensity).toFixed(2)}px`);
+  typeStage.style.setProperty("--shake-y-pos", `${(1 * intensity).toFixed(2)}px`);
+  typeStage.style.setProperty("--shake-y-neg", `${(-1 * intensity).toFixed(2)}px`);
+  typeStage.style.setProperty("--shake-rot-neg", `${(-1.5 * intensity).toFixed(2)}deg`);
+  typeStage.style.setProperty("--shake-rot-pos", `${(1.5 * intensity).toFixed(2)}deg`);
+  typeStage.style.setProperty("--shake-rot-soft", `${(-1 * intensity).toFixed(2)}deg`);
+  typeStage.style.setProperty("--droop-y", `${(6 * intensity).toFixed(2)}px`);
+  typeStage.style.setProperty("--droop-opacity", (0.92 - 0.24 * intensity).toFixed(2));
+  typeStage.style.setProperty("--float-x", `${(3 * intensity).toFixed(2)}px`);
+  typeStage.style.setProperty("--float-y", `${(-7 * intensity).toFixed(2)}px`);
+}
+
+function analysisKeyFor(text) {
+  return String(text || "");
+}
+
+function setLlmReady(isReady) {
+  if (!llmReadyBadge) return;
+  llmReadyBadge.hidden = !isReady;
+  llmReadyBadge.classList.toggle("is-visible", isReady);
+}
+
+function syncRealtimeFeedbackToggle() {
+  if (realtimeFeedbackToggle) {
+    realtimeFeedbackToggle.classList.toggle("is-active", realtimeFeedbackEnabled);
+    realtimeFeedbackToggle.setAttribute("aria-pressed", String(realtimeFeedbackEnabled));
+    realtimeFeedbackToggle.title = t(journalDemoActive ? "journal.demoFeedbackHint" : "journal.liveFeedbackHint");
+  }
+  if (llmFeedbackToggle) {
+    llmFeedbackToggle.classList.toggle("is-active", !realtimeFeedbackEnabled);
+    llmFeedbackToggle.setAttribute("aria-pressed", String(!realtimeFeedbackEnabled));
+    llmFeedbackToggle.title = t("journal.waitFeedbackHint");
+  }
 }
 
 function hexToRgba(hex, alpha) {
@@ -453,7 +667,7 @@ function createEmojiGlyph(emoji, mapping = {}) {
   span.style.setProperty("--glyph-weight", 620);
   span.style.setProperty("--glyph-color", style.color || "var(--ink)");
   if (style.backgroundColor) {
-    span.style.backgroundColor = hexToRgba(style.backgroundColor, signal.backgroundAlpha ?? 0.1);
+    span.style.backgroundColor = hexToRgba(style.backgroundColor, (signal.backgroundAlpha ?? 0.1) * (0.35 + 0.65 * getIntensity()));
   }
   return span;
 }
@@ -473,6 +687,7 @@ function typographyRuns(text) {
 }
 
 function renderTypography(text, design = {}, vaMapping = null) {
+  applyMotionIntensity();
   typeStage.textContent = "";
   const fragment = document.createDocumentFragment();
   const emojiInsertions = buildEmojiInsertions(text, vaMapping);
@@ -806,7 +1021,7 @@ function normalizeAnalysisPayload(payload) {
   return { emotion, vaMapping, overall };
 }
 
-function applyAnalysis(payload) {
+function applyAnalysis(payload, options = {}) {
   const { emotion, vaMapping, overall } = normalizeAnalysisPayload(payload);
   currentAnalysisPayload = payload;
   detectedOverallMapping = overall;
@@ -826,11 +1041,12 @@ function applyAnalysis(payload) {
   const hasRemoteDesign = payload.llm_design && Object.keys(payload.llm_design).length > 0;
   const design = hasRemoteDesign
     ? normalizeDesignColors(payload.llm_design, overall)
-    : localDesign(journalText.value, vaMapping);
+    : (options.allowLocalDesignFallback === false ? {} : localDesign(journalText.value, vaMapping));
   currentDesign = design;
   renderTypography(journalText.value, design, vaMapping);
   renderChips(selectedLabel);
   renderPrompts(emotion.prompts || []);
+  if (options.markComplete) setLlmReady(true);
 }
 
 function renderChips(activeLabel) {
@@ -878,43 +1094,269 @@ function renderPrompts(prompts) {
   });
 }
 
-async function analyzeText() {
+function renderPlainMirror(text = journalText.value) {
+  renderedAnalysisKey = null;
+  currentDesign = {};
+  currentVAMapping = null;
+  renderTypography(text, {}, null);
+}
+
+function clearPendingEmotionPanel() {
+  // Do not save a previous snapshot's inferred emotion with newly edited text.
+  currentAnalysisPayload = {};
+  detectedOverallMapping = null;
+  currentOverallMapping = null;
+  currentCandidates = [];
+  selectedLabel = "";
+  primaryEmotion.textContent = uiText("未明确", "Unclear");
+  reflectionText.textContent = "";
+  confidenceMeter.style.width = "0%";
+  emotionDot.style.background = palette.mauve;
+  emotionChips.textContent = "";
+  updateVAControl({ valence: 0, arousal: 0, color: palette.mauve });
+}
+
+function renderLocalFeedback(text = journalText.value, { updatePanel = true } = {}) {
+  const mapping = localVAMapping(text);
+  const design = localDesign(text, mapping);
+  currentVAMapping = mapping;
+  currentDesign = design;
+  if (updatePanel) {
+    applyAnalysis({
+      emotion: localEmotion(text, mapping),
+      va_mapping: mapping,
+      llm_design: design,
+    });
+  } else {
+    renderTypography(text, design, mapping);
+  }
+}
+
+function rerenderCurrentTypography() {
+  if (currentDesign && Object.keys(currentDesign).length) {
+    renderTypography(journalText.value, currentDesign, currentVAMapping);
+    return;
+  }
+  if (realtimeFeedbackEnabled) {
+    renderLocalFeedback(journalText.value, { updatePanel: false });
+    return;
+  }
+  renderPlainMirror(journalText.value);
+}
+
+function leaveJournalDemoIfEdited() {
+  if (!journalDemoActive || journalText.value === journalDemoText) return false;
+  journalDemoActive = false;
+  // The demo is not a saved preference: personal writing always starts in wait mode.
+  realtimeFeedbackEnabled = false;
+  scheduledAnalysisKey = null;
+  syncRealtimeFeedbackToggle();
+  return true;
+}
+
+function showJournalDemo() {
+  cancelJournalAnalysis();
+  scheduledAnalysisKey = analysisKeyFor(journalText.value);
+  renderedAnalysisKey = null;
+  syncRealtimeFeedbackToggle();
+  renderLocalFeedback(journalText.value);
+  setAnalysisState("demo");
+}
+
+function setAnalysisState(phase) {
+  analysisPhase = phase;
+  const pending = phase === "typing" || phase === "waiting";
+  typeStage.setAttribute("aria-busy", String(pending));
+  if (analysisNotice) analysisNotice.dataset.state = phase;
+  if (retryAnalysisButton) retryAnalysisButton.hidden = phase !== "error";
+  const statusKeys = {
+    idle: "journal.ready", demo: "journal.demoReady", typing: "journal.waitingForPause",
+    waiting: "journal.waitingForLlm", ready: "journal.llmReady", error: "journal.analysisUnavailable",
+  };
+  const noticeKeys = {
+    idle: realtimeFeedbackEnabled ? "journal.liveFeedbackHint" : "journal.waitFeedbackHint",
+    demo: "journal.demoFeedbackHint",
+    typing: realtimeFeedbackEnabled ? "journal.typingLive" : "journal.typingWait",
+    waiting: realtimeFeedbackEnabled ? "journal.pendingLive" : "journal.pendingWait",
+    ready: "journal.resultStable",
+    error: realtimeFeedbackEnabled ? "journal.failedLive" : "journal.failedWait",
+  };
+  setStatus(t(statusKeys[phase]));
+  if (analysisNoticeText) analysisNoticeText.textContent = t(noticeKeys[phase]);
+  setLlmReady(phase === "ready");
+}
+
+function cancelJournalAnalysis() {
+  clearTimeout(analyzeTimer);
+  analyzeTimer = null;
+  // Invalidate even aborted responses for the same text (e.g. type, undo, retry).
+  analysisSequence += 1;
+  if (activeAnalysisController) activeAnalysisController.abort();
+  activeAnalysisController = null;
+  inflightAnalysisKey = "";
+}
+
+function presentAnalysis(payload, key) {
+  if (renderedAnalysisKey !== key) {
+    applyAnalysis(payload, { markComplete: true, allowLocalDesignFallback: realtimeFeedbackEnabled });
+    renderedAnalysisKey = key;
+    // Multimodal consumers share the settled snapshot, not a separate typing timer.
+    document.dispatchEvent(new CustomEvent("journal-analysis-ready", { detail: { text: key } }));
+  }
+  setAnalysisState("ready");
+}
+
+function selectFeedbackMode(live) {
+  leaveJournalDemoIfEdited();
+  if (realtimeFeedbackEnabled === live) return;
+  realtimeFeedbackEnabled = live;
+  try { localStorage.setItem("emomirror.feedbackMode", live ? "live" : "wait"); } catch (_) {}
+  syncRealtimeFeedbackToggle();
+  if (journalDemoActive && live) {
+    showJournalDemo();
+    return;
+  }
   const text = journalText.value;
+  const key = analysisKeyFor(text);
+  if (analysisCache.has(key)) presentAnalysis(analysisCache.get(key), key);
+  else {
+    if (live && text.trim()) renderLocalFeedback(text);
+    else {
+      renderPlainMirror(text);
+      clearPendingEmotionPanel();
+    }
+    setAnalysisState(analysisPhase);
+  }
+  if (journalDemoActive) scheduleAnalysis({ force: true });
+  // For personal writing, preview switches do not restart a model request.
+}
+
+function startJournalComposition() {
+  isComposingJournal = true;
+  cancelJournalAnalysis();
+  scheduledAnalysisKey = null;
+  setAnalysisState("typing");
+}
+
+function finishJournalComposition() {
+  isComposingJournal = false;
+  scheduleAnalysis();
+}
+
+function handleJournalInput(event) {
+  const leftDemo = leaveJournalDemoIfEdited();
+  if (leftDemo && (isComposingJournal || event.isComposing)) {
+    renderPlainMirror();
+    clearPendingEmotionPanel();
+    setAnalysisState("typing");
+  }
+  if (!isComposingJournal && !event.isComposing) scheduleAnalysis();
+}
+
+async function analyzeText(textSnapshot = journalText.value) {
+  const text = String(textSnapshot || "");
+  const key = analysisKeyFor(text);
+  if (isComposingJournal || analysisKeyFor(journalText.value) !== key) return;
+  leaveJournalDemoIfEdited();
+  if (journalDemoActive && realtimeFeedbackEnabled) {
+    if (analysisPhase !== "demo") showJournalDemo();
+    return;
+  }
+  scheduledAnalysisKey = key;
+  clearTimeout(analyzeTimer);
+  analyzeTimer = null;
   if (!text.trim()) {
-    applyAnalysis({ emotion: localEmotion(text), va_mapping: localVAMapping(text), llm_design: {} });
-    setStatus("Ready");
+    cancelJournalAnalysis();
+    renderPlainMirror(text);
+    setAnalysisState("idle");
     return;
   }
 
-  const localMapping = localVAMapping(text);
-  setStatus("Mirroring");
-  applyAnalysis({
-    emotion: localEmotion(text, localMapping),
-    va_mapping: localMapping,
-    llm_design: localDesign(text, localMapping),
-  });
+  if (analysisCache.has(key)) {
+    presentAnalysis(analysisCache.get(key), key);
+    return;
+  }
+
+  if (inflightAnalysisKey === key && activeAnalysisController) return;
+
+  if (activeAnalysisController) activeAnalysisController.abort();
+  const controller = new AbortController();
+  activeAnalysisController = controller;
+  inflightAnalysisKey = key;
+  const requestId = ++analysisSequence;
+  setAnalysisState("waiting");
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    if (requestId === analysisSequence && analysisKeyFor(journalText.value) === key) setAnalysisState("error");
+    controller.abort();
+  }, JOURNAL_REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetch("/analyze-text", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, intensity: getIntensity() }),
+      body: JSON.stringify({ text, intensity: 1 }),
+      signal: controller.signal,
     });
     if (!response.ok) throw new Error("analysis failed");
     const payload = await response.json();
-    applyAnalysis(payload);
-    setStatus("Live");
+    if (controller.signal.aborted || requestId !== analysisSequence || analysisKeyFor(journalText.value) !== key) return;
+    if (!payload.llm_design || typeof payload.llm_design !== "object" || !Object.keys(payload.llm_design).length) {
+      throw new Error("No typography returned");
+    }
+    analysisCache.set(key, payload);
+    if (analysisCache.size > 24) analysisCache.delete(analysisCache.keys().next().value);
+    presentAnalysis(payload, key);
   } catch (error) {
-    setStatus("Local mirror");
+    if (error.name === "AbortError" && !timedOut) return;
+    if (requestId === analysisSequence && analysisKeyFor(journalText.value) === key) setAnalysisState("error");
+  } finally {
+    clearTimeout(timeout);
+    if (requestId === analysisSequence) {
+      activeAnalysisController = null;
+      inflightAnalysisKey = "";
+    }
   }
 }
 
-function scheduleAnalysis() {
-  clearTimeout(analyzeTimer);
-  const mapping = localVAMapping(journalText.value);
-  currentVAMapping = mapping;
-  renderTypography(journalText.value, localDesign(journalText.value, mapping), mapping);
-  analyzeTimer = setTimeout(analyzeText, 420);
+function scheduleAnalysis({ force = false } = {}) {
+  leaveJournalDemoIfEdited();
+  if (isComposingJournal) return;
+  const text = journalText.value;
+  const key = analysisKeyFor(text);
+  // Duplicate input events and idle time must not reset the debounce or animations.
+  if (!force && scheduledAnalysisKey === key) return;
+  if (journalDemoActive && realtimeFeedbackEnabled) {
+    showJournalDemo();
+    return;
+  }
+  scheduledAnalysisKey = key;
+  cancelJournalAnalysis();
+  renderedAnalysisKey = null;
+
+  if (!text.trim()) {
+    applyAnalysis({ emotion: localEmotion(text), va_mapping: localVAMapping(text), llm_design: {} }, { allowLocalDesignFallback: false });
+    setAnalysisState("idle");
+    return;
+  }
+
+  if (analysisCache.has(key)) {
+    presentAnalysis(analysisCache.get(key), key);
+    return;
+  }
+
+  if (realtimeFeedbackEnabled) {
+    renderLocalFeedback(text);
+  } else {
+    renderPlainMirror(text);
+    clearPendingEmotionPanel();
+  }
+  setAnalysisState("typing");
+  analyzeTimer = setTimeout(() => {
+    analyzeTimer = null;
+    return analyzeText(text);
+  }, JOURNAL_ANALYSIS_DELAY_MS);
 }
 
 function saveEntries() {
@@ -973,7 +1415,7 @@ function renderHome() {
 async function saveCurrentEntry() {
   const text = journalText.value.trim();
   if (!text) {
-    setStatus("Nothing to save");
+    setStatus(uiText("没有可保存内容", "Nothing to save"));
     return;
   }
   const confidence = Math.round(Number(confidenceMeter.style.width.replace("%", "")) || 0);
@@ -981,7 +1423,7 @@ async function saveCurrentEntry() {
   const original = detectedOverallMapping || mapping;
   const localEntry = {
     text,
-    label: selectedLabel || primaryEmotion.textContent,
+    label: selectedLabel || mapping.label || primaryEmotion.textContent,
     valence: mapping.valence,
     arousal: mapping.arousal,
     color: mapping.color,
@@ -1024,10 +1466,11 @@ async function saveCurrentEntry() {
     entries = entries.slice(0, 24);
     saveEntries();
     renderHome();
-    setStatus("Saved");
+    setStatus(uiText("保存成功", "Saved"));
+    showSaveFeedback(uiText("保存成功，记录已保存。", "Saved successfully."), "success");
     return;
   } catch (error) {
-    setStatus("Saved locally; sync failed");
+    setStatus(uiText("已保存到本地，云端同步失败", "Saved locally; sync failed"));
     console.error("Save to server failed:", error.message);
   }
 
@@ -1035,7 +1478,8 @@ async function saveCurrentEntry() {
   entries = entries.slice(0, 12);
   saveEntries();
   renderHome();
-  setStatus("Saved locally");
+  setStatus(uiText("已保存到本地", "Saved locally"));
+  showSaveFeedback(uiText("已保存到本地，云端同步稍后可重试。", "Saved locally. Cloud sync can retry later."), "warning");
 }
 
 let mediaRecorder = null;
@@ -1191,16 +1635,23 @@ function bindEvents() {
     button.addEventListener("click", () => switchView(button.dataset.view));
   });
 
-  journalText.addEventListener("input", scheduleAnalysis);
+  journalText.addEventListener("input", handleJournalInput);
+  journalText.addEventListener("compositionstart", startJournalComposition);
+  journalText.addEventListener("compositionend", finishJournalComposition);
   intensityRange.addEventListener("input", () => {
     if (homeIntensity) homeIntensity.textContent = `${intensityRange.value}%`;
-    if (currentOverallMapping) {
-      renderTypography(journalText.value, recolorDesign(currentDesign, currentOverallMapping), currentVAMapping);
-    } else {
-      const localMapping = localVAMapping(journalText.value);
-      renderTypography(journalText.value, localDesign(journalText.value, localMapping), localMapping);
-    }
-    scheduleAnalysis();
+    rerenderCurrentTypography();
+  });
+  if (realtimeFeedbackToggle) {
+    realtimeFeedbackToggle.addEventListener("click", () => {
+      selectFeedbackMode(true);
+    });
+  }
+  if (llmFeedbackToggle) llmFeedbackToggle.addEventListener("click", () => selectFeedbackMode(false));
+  if (retryAnalysisButton) retryAnalysisButton.addEventListener("click", () => {
+    if (analysisPhase !== "error" || isComposingJournal) return;
+    scheduleAnalysis({ force: true });
+    void analyzeText();
   });
   saveEntry.addEventListener("click", saveCurrentEntry);
   applyCustomLabel.addEventListener("click", () => {
@@ -1267,6 +1718,8 @@ async function boot() {
   if (participant) saveParticipant(participant);
   else saveParticipant(null);
   initI18n();
+  syncRealtimeFeedbackToggle();
+  setLlmReady(false);
   startDateTicker();
   bindEvents();
   setupSpeechRecognition();
@@ -1275,10 +1728,10 @@ async function boot() {
   if (initialView && document.getElementById(initialView)) switchView(initialView);
   renderChips("");
   renderPrompts(localEmotion("").prompts);
-  renderTypography(journalText.value, localDesign(journalText.value), localVAMapping(journalText.value));
+  // Show the starter demo immediately, without waiting for account history or an LLM.
+  scheduleAnalysis();
   if (participantCode()) await loadParticipantEntries();
   else renderHome();
-  scheduleAnalysis();
 }
 
 /* ============================================================
@@ -1290,6 +1743,7 @@ const I18N = {
     "nav.home": "首页", "nav.journal": "随手记", "nav.diaryBook": "日记本", "nav.review": "情绪复盘", "nav.records": "历史记录", "nav.body": "身体感受", "nav.data": "数据",
     "nav.essay": "情绪随笔", "nav.ecoEcho": "Emo 回响", "nav.historyReview": "历史回顾", "nav.profile": "个人信息", "nav.login": "登录",
     "topbar.local": "本地模式",
+    "essay.moment": "随手记", "essay.diary": "日记本",
     "research.title": "研究模式", "research.code": "实验编号", "research.consent": "同意保存日记和操作日志用于研究分析",
     "research.connect": "进入记录", "research.exportJson": "导出 JSON", "research.exportCsv": "导出 CSV",
     "research.status": "未连接实验编号，本机临时保存。",
@@ -1302,11 +1756,15 @@ const I18N = {
     "journal.eyebrow": "表达性写作", "journal.title": "今天的记录", "journal.ready": "就绪",
     "journal.modeType": "文字输入", "journal.modeVoice": "语音转文字",
     "journal.placeholder": "写下发生了什么。可以具体、模糊、矛盾，或者不确定。",
-    "journal.intensity": "镜像反馈强度", "journal.startVoice": "开始语音", "journal.save": "保存记录",
+    "journal.intensity": "镜像反馈强度", "journal.realtimeFeedback": "实时反馈", "journal.llmReady": "镜像已就绪", "journal.startVoice": "开始语音", "journal.save": "保存记录",
+    "journal.uploadImage": "上传图片", "journal.combinedEmotion": "综合情绪：",
     "journal.mirror.eyebrow": "情绪动态字体", "journal.mirror.title": "实时镜像",
     "journal.detected": "识别结果", "journal.customLabel": "自定义标签",
     "journal.customPlaceholder": "输入更贴近的情绪词", "journal.apply": "应用",
     "journal.va": "V-A 坐标",
+    "journal.vaUser": "你 · 文字/语音", "journal.vaImage": "画面 · 图片",
+    "journal.multimodal": "多模态对照", "journal.userAffect": "文字 / 语音",
+    "journal.contentAffect": "画面 / 图片", "journal.combinedAffect": "综合情绪",
     "va.positive": "积极", "va.negative": "消极", "va.high": "高能量", "va.low": "低能量",
     "body.eyebrow": "情绪与身体", "body.title": "身体感受",
     "body.subtitle": "选择身体不适部位和感受，结合最近日记，生成温和缓解提示。",
@@ -1315,6 +1773,7 @@ const I18N = {
     "body.journalRef": "当前日记参考", "body.journalRefPlaceholder": "填写当前的日记内容（可选）",
     "body.selectRegion": "选择部位", "body.selectSymptom": "选择感受",
     "body.details": "详细信息", "body.severity": "程度", "body.duration": "持续时间",
+    "body.durationDefault": "下午开始",
     "body.addPair": "加入组合", "body.clearPairs": "清空",
     "body.describe": "补充描述", "body.describePlaceholder": "今天喝水较少，坐着学习了很久…",
     "body.generate": "生成身体感受建议", "body.statusHint": "系统会综合身体感受和最近日记。",
@@ -1330,6 +1789,7 @@ const I18N = {
     "nav.home": "Home", "nav.journal": "Journal", "nav.diaryBook": "Diary", "nav.review": "Review", "nav.records": "Records", "nav.body": "Body Sense", "nav.data": "Data",
     "nav.essay": "Journal", "nav.ecoEcho": "Emo Echo", "nav.historyReview": "History", "nav.profile": "Profile", "nav.login": "Login",
     "topbar.local": "Local mode",
+    "essay.moment": "Quick Journal", "essay.diary": "Diary",
     "research.title": "Research mode", "research.code": "Participant ID", "research.consent": "I agree to save journals and logs for research",
     "research.connect": "Connect", "research.exportJson": "Export JSON", "research.exportCsv": "Export CSV",
     "research.status": "No participant ID. Saving locally.",
@@ -1339,14 +1799,18 @@ const I18N = {
     "home.stat.entries": "Entries", "home.stat.localOnly": "local only", "home.stat.latest": "Latest label",
     "home.stat.waiting": "waiting for text", "home.stat.intensity": "Mirror intensity", "home.stat.intensityHint": "adjustable in journal",
     "home.recent.eyebrow": "Newest first", "home.recent.title": "Emotion Journal", "home.recent.clear": "Clear local entries",
-    "journal.eyebrow": "Expressive writing", "journal.title": "Today's entry", "journal.ready": "Ready",
+    "journal.eyebrow": "Expressive writing", "journal.title": "Journal", "journal.ready": "Ready",
     "journal.modeType": "Type", "journal.modeVoice": "Voice to text",
     "journal.placeholder": "Write what happened. Be specific, vague, contradictory, or unsure.",
-    "journal.intensity": "Feedback intensity", "journal.startVoice": "Start voice", "journal.save": "Save entry",
+    "journal.intensity": "Feedback intensity", "journal.realtimeFeedback": "Real-time Feedback", "journal.llmReady": "Mirror ready", "journal.startVoice": "Start voice", "journal.save": "Save entry",
+    "journal.uploadImage": "Upload images", "journal.combinedEmotion": "Combined emotion:",
     "journal.mirror.eyebrow": "Kinetic affective type", "journal.mirror.title": "Live mirror",
-    "journal.detected": "Detected", "journal.customLabel": "Custom label",
+    "journal.detected": "Detected emotion", "journal.customLabel": "Custom label",
     "journal.customPlaceholder": "Type a closer emotion word", "journal.apply": "Apply",
-    "journal.va": "V-A Coordinate",
+    "journal.va": "V-A Coordinates",
+    "journal.vaUser": "You · text/voice", "journal.vaImage": "Image · picture",
+    "journal.multimodal": "Multimodal comparison", "journal.userAffect": "Text / voice",
+    "journal.contentAffect": "Image / picture", "journal.combinedAffect": "Combined emotion",
     "va.positive": "Positive", "va.negative": "Negative", "va.high": "High energy", "va.low": "Low energy",
     "body.eyebrow": "Emotion & Body", "body.title": "Body Sensation",
     "body.subtitle": "Select body regions and symptoms. The system combines body cues with recent journals.",
@@ -1355,6 +1819,7 @@ const I18N = {
     "body.journalRef": "Journal reference", "body.journalRefPlaceholder": "Paste today's journal (optional)",
     "body.selectRegion": "Select region", "body.selectSymptom": "Select symptom",
     "body.details": "Details", "body.severity": "Severity", "body.duration": "Duration",
+    "body.durationDefault": "Started this afternoon",
     "body.addPair": "Add pair", "body.clearPairs": "Clear",
     "body.describe": "Describe more", "body.describePlaceholder": "Less water today, studied for hours…",
     "body.generate": "Generate advice", "body.statusHint": "System combines body cues and recent journals.",
@@ -1384,6 +1849,15 @@ function applyI18n() {
     const key = el.dataset.i18nPlaceholder;
     el.placeholder = t(key);
   });
+  document.querySelectorAll("[data-i18n-value]").forEach((el) => {
+    const key = el.dataset.i18nValue;
+    el.value = t(key);
+  });
+  if (primaryEmotion && (!selectedLabel || currentLang === "en")) {
+    primaryEmotion.textContent = displayEmotionLabel(selectedLabel || primaryEmotion.textContent);
+  }
+  syncRealtimeFeedbackToggle();
+  setAnalysisState(analysisPhase);
 }
 
 function initI18n() {
@@ -1558,7 +2032,7 @@ function removeBodyPair(i) {
 }
 
 async function clearAllRecords() {
-  if (!confirm("确定要清除所有记录吗？此操作不可撤销。")) return;
+  if (!confirm(uiText("确定要清除所有记录吗？此操作不可撤销。", "Clear all records? This cannot be undone."))) return;
   const code = (participant?.participant_code || "local").trim() || "local";
   try {
     await fetch(`/participants/${encodeURIComponent(code)}/all-data`, { method: "DELETE" });
@@ -1772,7 +2246,7 @@ function renderVAChart() {
     data: {
       datasets: [{
         label: currentLang === "zh" ? "情绪坐标" : "Emotion points",
-        data: valid.map((e) => ({ x: e.valence || 0, y: e.arousal || 0, label: e.label })),
+        data: valid.map((e) => ({ x: e.valence || 0, y: e.arousal || 0, label: displayEmotionLabel(e.label) })),
         backgroundColor: valid.map((e) => e.color || "#F59E0B"),
         pointRadius: 7,
         pointHoverRadius: 10,
@@ -1810,7 +2284,7 @@ function renderDataSummary() {
     `${currentLang === "zh" ? "平均效价" : "Avg Valence"}: <b>${avgV.toFixed(2)}</b>`,
     `${currentLang === "zh" ? "平均唤醒度" : "Avg Arousal"}: <b>${avgA.toFixed(2)}</b>`,
     `${currentLang === "zh" ? "最常见情绪" : "Top emotions"}:`,
-    ...top.map(([l, c]) => `&nbsp;&nbsp;${l} × ${c}`),
+    ...top.map(([l, c]) => `&nbsp;&nbsp;${displayEmotionLabel(l)} × ${c}`),
   ].join("<br>");
 }
 

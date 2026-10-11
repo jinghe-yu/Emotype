@@ -1,5 +1,7 @@
 """Pydantic request contracts shared by API route groups."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -91,6 +93,7 @@ class BodySensationAdviceRequest(BaseModel):
     free_text: str = Field(default="", max_length=12000)
     include_recent_diaries: bool = True
     recent_diary_limit: int = Field(default=3, ge=0, le=10)
+    ui_language: Literal["en", "zh"] = "en"
 
 
 class CombinedAnalysisRequest(BaseModel):

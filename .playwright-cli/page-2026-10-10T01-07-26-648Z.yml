@@ -1,0 +1,171 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - link "EmoBridge home" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - img "emobridge" [ref=e6]
+    - navigation "Primary navigation" [ref=e7]:
+      - link "Home" [ref=e8] [cursor=pointer]:
+        - /url: /
+      - link "Journal" [ref=e9] [cursor=pointer]:
+        - /url: /essay
+      - link "Body Sense" [ref=e10] [cursor=pointer]:
+        - /url: /body-sensation
+      - link "Emo Echo" [ref=e11] [cursor=pointer]:
+        - /url: /emo-echo
+      - link "History" [ref=e12] [cursor=pointer]:
+        - /url: /historyreview
+    - generic [ref=e13]:
+      - button "G Guest" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: G
+        - generic [ref=e16]: Guest
+      - link "Login" [ref=e17] [cursor=pointer]:
+        - /url: /login
+  - tablist "Journal sections" [ref=e18]:
+    - tab "Journal" [selected] [ref=e19] [cursor=pointer]
+    - tab "Diary" [ref=e20] [cursor=pointer]
+  - tabpanel [ref=e21]:
+    - region [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - paragraph [ref=e27]: Express
+              - heading "Journal" [level=2] [ref=e28]
+            - generic [ref=e29]:
+              - generic [ref=e30]: Ready
+              - generic [ref=e31]: 2026.10.10 Sat
+          - group [ref=e32]:
+            - button "Type" [ref=e33] [cursor=pointer]
+            - button "Voice to text" [ref=e34] [cursor=pointer]
+          - textbox "Write what happened. Be specific, vague, contradictory, or unsure." [ref=e35]: I kept saying I was fine today, but my chest felt a little tight after the meeting.
+          - button "Upload image" [ref=e37] [cursor=pointer]
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]: Feedback intensity
+              - slider "Feedback intensity" [ref=e41]: "80"
+            - button "Start voice" [ref=e42] [cursor=pointer]
+            - button "Save entry" [ref=e43] [cursor=pointer]
+        - region [ref=e44]:
+          - generic [ref=e46]:
+            - paragraph [ref=e47]: Live Mirror
+            - heading "Live mirror" [level=2] [ref=e48]
+          - generic [ref=e50]:
+            - generic [ref=e51]: I
+            - generic [ref=e54]:
+              - generic [ref=e55]: k
+              - generic [ref=e56]: e
+              - generic [ref=e57]: p
+              - generic [ref=e58]: t
+            - generic [ref=e60]:
+              - generic [ref=e61]: s
+              - generic [ref=e62]: a
+              - generic [ref=e63]: "y"
+              - generic [ref=e64]: i
+              - generic [ref=e65]: "n"
+              - generic [ref=e66]: g
+            - generic [ref=e68]: I
+            - generic [ref=e71]:
+              - generic [ref=e72]: w
+              - generic [ref=e73]: a
+              - generic [ref=e74]: s
+            - generic [ref=e76]:
+              - generic [ref=e77]: f
+              - generic [ref=e78]: i
+              - generic [ref=e79]: "n"
+              - generic [ref=e80]: e
+            - generic [ref=e82]:
+              - generic [ref=e83]: t
+              - generic [ref=e84]: o
+              - generic [ref=e85]: d
+              - generic [ref=e86]: a
+              - generic [ref=e87]: "y"
+              - generic [ref=e88]: ","
+              - generic [ref=e89]: 😐
+            - generic [ref=e91]:
+              - generic [ref=e92]: b
+              - generic [ref=e93]: u
+              - generic [ref=e94]: t
+            - generic [ref=e96]:
+              - generic [ref=e97]: m
+              - generic [ref=e98]: "y"
+            - generic [ref=e100]:
+              - generic [ref=e101]: c
+              - generic [ref=e102]: h
+              - generic [ref=e103]: e
+              - generic [ref=e104]: s
+              - generic [ref=e105]: t
+            - generic [ref=e107]:
+              - generic [ref=e108]: f
+              - generic [ref=e109]: e
+              - generic [ref=e110]: l
+              - generic [ref=e111]: t
+            - generic [ref=e113]: a
+            - generic [ref=e116]:
+              - generic [ref=e117]: l
+              - generic [ref=e118]: i
+              - generic [ref=e119]: t
+              - generic [ref=e120]: t
+              - generic [ref=e121]: l
+              - generic [ref=e122]: e
+            - generic [ref=e124]:
+              - generic [ref=e125]: t
+              - generic [ref=e126]: i
+              - generic [ref=e127]: g
+              - generic [ref=e128]: h
+              - generic [ref=e129]: t
+            - generic [ref=e131]:
+              - generic [ref=e132]: a
+              - generic [ref=e133]: f
+              - generic [ref=e134]: t
+              - generic [ref=e135]: e
+              - generic [ref=e136]: r
+            - generic [ref=e138]:
+              - generic [ref=e139]: t
+              - generic [ref=e140]: h
+              - generic [ref=e141]: e
+            - generic [ref=e143]:
+              - generic [ref=e144]: m
+              - generic [ref=e145]: e
+              - generic [ref=e146]: e
+              - generic [ref=e147]: t
+              - generic [ref=e148]: i
+              - generic [ref=e149]: "n"
+              - generic [ref=e150]: g
+              - generic [ref=e151]: .
+              - generic [ref=e152]: 😰
+          - generic [ref=e153]:
+            - generic [ref=e154]:
+              - text: Detected
+              - strong [ref=e155]: Unclear
+            - generic "Confidence" [ref=e156]
+          - generic "Candidate emotion labels" [ref=e158]:
+            - button "Unhappy" [ref=e159] [cursor=pointer]
+            - button "Proud" [ref=e160] [cursor=pointer]
+            - button "Apathetic" [ref=e161] [cursor=pointer]
+            - button "At ease" [ref=e162] [cursor=pointer]
+            - button "Uneasy" [ref=e163] [cursor=pointer]
+            - button "Joyful" [ref=e164] [cursor=pointer]
+            - button "Low" [ref=e165] [cursor=pointer]
+            - button "Unhurried" [ref=e166] [cursor=pointer]
+          - generic "Custom emotion label" [ref=e167]:
+            - generic [ref=e168]:
+              - generic [ref=e169]: Custom label
+              - textbox "Custom label" [ref=e170]:
+                - /placeholder: Type a closer emotion word
+            - button "Apply" [ref=e171] [cursor=pointer]
+          - region "V-A Coordinate" [ref=e172]:
+            - generic [ref=e173]:
+              - generic [ref=e174]: V-A Coordinate
+              - strong [ref=e175]: V +0.00 · A +0.00
+            - slider "Valence arousal handle" [ref=e176]:
+              - generic: Positive
+              - generic: Negative
+              - generic: High energy
+              - generic: Low energy
+              - button "Drag to adjust coordinates" [ref=e177] [cursor=pointer]
+          - region "Multimodal emotion comparison" [ref=e178]:
+            - generic [ref=e179]: Multimodal comparison
+            - article [ref=e182]:
+              - generic [ref=e183]: Text / voice
+              - strong [ref=e186]: Unclear
+              - generic [ref=e187]: V +0.00 · A +0.00

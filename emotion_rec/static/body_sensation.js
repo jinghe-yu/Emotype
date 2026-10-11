@@ -75,6 +75,84 @@ const BODY_STRUCTURE = [
   ]},
 ];
 
+const BODY_LABEL_EN = {
+  head: "Head",
+  headache: "Headache",
+  dizziness: "Dizziness",
+  brain_fog: "Brain fog / scattered attention",
+  clear_head: "Clear mind",
+  focused: "Focused",
+  eyes: "Eyes",
+  eye_strain: "Eye strain",
+  dry_eyes: "Dry eyes",
+  blurred_vision: "Blurred vision",
+  bright_eyes: "Bright eyes",
+  throat_mouth: "Mouth / throat",
+  throat_tightness: "Throat tightness / lump sensation",
+  dry_throat: "Dry throat",
+  jaw_tension: "Jaw tension",
+  voice_clear: "Clear voice",
+  chest: "Chest",
+  chest_tightness: "Chest tightness / pressure",
+  palpitation: "Fast heartbeat / palpitation",
+  short_breath: "Shortness of breath",
+  chest_open: "Breathing easily",
+  heart_warm: "Warm-hearted",
+  shoulder_neck: "Shoulders / neck",
+  neck_stiff: "Neck stiffness",
+  shoulder_pain: "Shoulder ache",
+  muscle_tight: "Muscle tension",
+  shoulder_relax: "Relaxed shoulders / neck",
+  stomach: "Stomach",
+  stomach_pain: "Stomach pain / cramps",
+  nausea: "Nausea",
+  appetite_loss: "Loss of appetite",
+  bloating: "Bloating / gas",
+  appetite_good: "Good appetite",
+  stomach_comfy: "Comfortable stomach",
+  back: "Lower back / back",
+  lower_back: "Lower back pain",
+  back_stiff: "Back stiffness",
+  back_relax: "Loose back",
+  hands: "Hands",
+  hand_shaking: "Shaking hands",
+  cold_hands: "Cold hands",
+  sweaty_hands: "Sweaty palms",
+  hands_warm: "Warm hands",
+  legs: "Legs",
+  leg_heavy: "Heavy / weak legs",
+  cold_feet: "Cold feet",
+  restless_legs: "Restless legs",
+  legs_light: "Light steps",
+  whole_body: "Whole body",
+  fatigue: "Fatigue / weakness",
+  insomnia: "Insomnia / poor sleep",
+  sweating: "Sweating / cold sweat",
+  restless: "Restlessness",
+  energized: "Energized",
+  calm_body: "Relaxed body",
+  grounded: "Grounded",
+};
+
+const BODY_EMOTION_LABEL_EN = {
+  "中性": "Neutral",
+  "不明确": "Unclear",
+  "未明确": "Unclear",
+  "不安": "Uneasy",
+  "焦虑": "Anxious",
+  "紧张": "Nervous",
+  "紧绷": "Tense",
+  "开心": "Happy",
+  "兴奋": "Excited",
+  "平静": "Calm",
+  "放松": "Relaxed",
+  "低落": "Low",
+  "悲伤": "Sad",
+  "疲惫": "Tired",
+  "复杂情绪": "Mixed emotions",
+  "身体不适": "Physical discomfort",
+};
+
 const els = {
   refreshContextBtn: document.getElementById("bodyRefreshContextBtn"),
   contextState: document.getElementById("bodyContextState"),
@@ -96,6 +174,43 @@ const els = {
   adviceEmpty: document.getElementById("bodyAdviceEmpty"),
   adviceContent: document.getElementById("bodyAdviceContent"),
 };
+
+function bodyLang() {
+  try {
+    return window.SharedI18N?.lang?.() || (localStorage.getItem("emomirror.lang") === "zh" ? "zh" : "en");
+  } catch (error) {
+    return "en";
+  }
+}
+
+function bodyIsEnglish() {
+  return bodyLang() === "en";
+}
+
+function bodyText(zh, en) {
+  return bodyIsEnglish() ? en : zh;
+}
+
+function bodyT(key, fallback) {
+  const value = window.SharedI18N?.t?.(key);
+  return value && value !== key ? value : fallback;
+}
+
+function bodyFormat(key, fallback, values = {}) {
+  return bodyT(key, fallback).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? "");
+}
+
+function bodyLabel(item) {
+  if (!item) return "";
+  return bodyIsEnglish() ? (BODY_LABEL_EN[item.id] || item.label || item.id) : (item.label || item.id);
+}
+
+function bodyEmotionLabel(label) {
+  if (window.SharedI18N?.label) return window.SharedI18N.label(label);
+  const text = String(label || "");
+  if (!bodyIsEnglish()) return text;
+  return BODY_EMOTION_LABEL_EN[text.trim()] || text;
+}
 
 const state = {
   selectedRegion: BODY_STRUCTURE[0],
@@ -203,7 +318,7 @@ function chipButton(label, options = {}) {
 function renderRegionChips() {
   els.regionChips.textContent = "";
   BODY_STRUCTURE.forEach((region) => {
-    els.regionChips.appendChild(chipButton(region.label, {
+    els.regionChips.appendChild(chipButton(bodyLabel(region), {
       active: state.selectedRegion.id === region.id,
       onClick: () => {
         state.selectedRegion = region;
@@ -218,7 +333,7 @@ function renderRegionChips() {
 function renderSymptomChips() {
   els.symptomChips.textContent = "";
   state.selectedRegion.symptoms.forEach((symptom) => {
-    els.symptomChips.appendChild(chipButton(symptom.label, {
+    els.symptomChips.appendChild(chipButton(bodyLabel(symptom), {
       active: state.selectedSymptom.id === symptom.id,
       positive: Boolean(symptom.positive),
       onClick: () => {
@@ -230,10 +345,13 @@ function renderSymptomChips() {
 }
 
 function renderPairs() {
-  els.pairCount.textContent = SharedI18N.pick(`${state.pairs.length} 组`, `${state.pairs.length} pairs`);
+  const count = state.pairs.length;
+  els.pairCount.textContent = bodyIsEnglish()
+    ? `${count} ${count === 1 ? "pair" : "pairs"}`
+    : `${count} ${bodyT("body.pairUnit", "组")}`;
   els.selectedPairs.textContent = "";
   if (!state.pairs.length) {
-    els.selectedPairs.textContent = SharedI18N.pick("暂无", "None yet");
+    els.selectedPairs.textContent = bodyT("body.noPairs", bodyText("暂无", "None yet"));
     return;
   }
 
@@ -242,13 +360,13 @@ function renderPairs() {
     row.className = "body-pair-card-v2";
     const body = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = `${pair.region.label} → ${pair.symptom.label}`;
+    title.textContent = `${bodyLabel(pair.region)} -> ${bodyLabel(pair.symptom)}`;
     const meta = document.createElement("span");
-    meta.textContent = SharedI18N.pick(`程度 ${pair.severity} / 5 · ${pair.duration || "未填写持续时间"}`, `Severity ${pair.severity} / 5 · ${pair.duration || "Duration not provided"}`);
+    meta.textContent = `${bodyT("body.severity", bodyText("程度", "Severity"))} ${pair.severity} / 5 · ${pair.duration || bodyT("body.noDuration", bodyText("未填写持续时间", "No duration entered"))}`;
     body.append(title, meta);
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.textContent = SharedI18N.pick("删除", "Remove");
+    remove.textContent = bodyT("body.delete", bodyText("删除", "Delete"));
     remove.addEventListener("click", () => {
       state.pairs.splice(index, 1);
       renderPairs();
@@ -294,9 +412,9 @@ function contextText(record) {
 }
 
 function contextLabel(record, index) {
-  const label = record.final_label || record.primary_emotion || record.original_label || record.label || SharedI18N.pick("记录", "Record");
+  const label = record.final_label || record.primary_emotion || record.original_label || record.label || bodyT("body.recordFallback", bodyText("记录", "Record"));
   const preview = contextText(record).replace(/\s+/g, " ").slice(0, 26);
-  return `${index + 1}. ${SharedI18N.label(label)}${preview ? ` · ${preview}` : ""}`;
+  return `${index + 1}. ${bodyEmotionLabel(label)}${preview ? ` · ${preview}` : ""}`;
 }
 
 async function ensureParticipantSession(code) {
@@ -317,7 +435,7 @@ function renderRecentContext() {
   if (!state.contextRecords.length) {
     const empty = document.createElement("p");
     empty.className = "body-context-empty";
-    empty.textContent = SharedI18N.pick("没有读取到最近随手记。仍然可以只根据本次身体感受生成建议。", "No recent journals were found. Advice can still use the current body sensations.");
+    empty.textContent = bodyT("body.noRecentContext", bodyText("没有读取到最近随手记。仍然可以只根据本次身体感受生成建议。", "No recent journal entries were loaded. You can still generate advice from this body sensation only."));
     els.recentContext.appendChild(empty);
     return;
   }
@@ -343,15 +461,15 @@ async function loadRecentContext() {
   rememberParticipantCode(code);
   state.loadingContext = true;
   els.refreshContextBtn.disabled = true;
-  setContextState(SharedI18N.pick("读取中", "Loading"));
+  setContextState(bodyT("body.loading", bodyText("读取中", "Loading")));
   try {
     await ensureParticipantSession(code);
     const data = await apiJson(`/participants/${encodeURIComponent(code)}/diaries`);
     state.contextRecords = data.diary_entries || data.diaries || data.entries || [];
-    setContextState(SharedI18N.pick(`已读取 ${state.contextRecords.length} 条`, `Loaded ${state.contextRecords.length} records`));
+    setContextState(bodyFormat("body.loadedRecords", bodyText("已读取 {count} 条", "Loaded {count} records"), { count: state.contextRecords.length }));
   } catch (error) {
     state.contextRecords = [];
-    setContextState(SharedI18N.pick("读取失败", "Could not load"));
+    setContextState(bodyT("body.loadFailed", bodyText("读取失败", "Load failed")));
   } finally {
     state.loadingContext = false;
     els.refreshContextBtn.disabled = false;
@@ -364,13 +482,31 @@ function renderAdvice(data) {
   const links = data?.possible_links || advice.possible_links || [];
   const safety = data?.safety || {};
   const context = data?.emotion_context || {};
+  const language = data?.language === "zh" ? "zh" : data?.language === "en" ? "en" : bodyLang();
+  const adviceText = (zh, en) => language === "zh" ? zh : en;
   els.adviceEmpty.style.display = "none";
   els.adviceContent.textContent = "";
+  els.adviceContent.setAttribute("lang", language === "zh" ? "zh-CN" : "en");
   document.querySelector(".body-advice-column")?.classList.add("is-visible");
+
+  if (advice.title) {
+    const title = document.createElement("h3");
+    title.textContent = advice.title;
+    els.adviceContent.appendChild(title);
+  }
+  const fallback = !String(advice.source || "").startsWith("llm");
+  if (fallback) {
+    const notice = document.createElement("p");
+    notice.className = "body-fallback-notice";
+    notice.textContent = data?.debug?.fallback_reason === "safety_priority"
+      ? adviceText("已优先显示安全提醒，未等待模型生成。", "Safety reminders are shown first, without waiting for the model.")
+      : adviceText("模型暂不可用，以下为一般性保底提醒，并非模型生成的个性化分析。", "The model is unavailable. These are general guidance reminders, not a model-generated personalized analysis.");
+    els.adviceContent.appendChild(notice);
+  }
 
   const summary = document.createElement("p");
   summary.className = "body-advice-summary-v2";
-  summary.textContent = advice.summary || SharedI18N.pick("建议已生成。", "Advice is ready.");
+  summary.textContent = advice.summary || bodyT("body.adviceGenerated", bodyText("建议已生成。", "Advice generated."));
   els.adviceContent.append(summary);
 
   if (advice.state_reading) {
@@ -382,22 +518,23 @@ function renderAdvice(data) {
 
   const meta = document.createElement("div");
   meta.className = "body-advice-meta-v2";
-  meta.textContent = SharedI18N.pick(`情绪线索：${context.primary_label || "-"} · 来源：${advice.source || "-"}`, `Emotion clues: ${context.primary_label || "-"} · Source: ${advice.source || "-"}`);
+  const emotionLabel = language === bodyLang() ? bodyEmotionLabel(context.primary_label) : context.primary_label;
+  meta.textContent = `${adviceText("情绪线索", "Emotion clue")}: ${emotionLabel || "-"} · ${adviceText("来源", "Source")}: ${fallback ? adviceText("一般性提醒", "General guidance") : adviceText("模型生成", "Model-generated")}`;
   els.adviceContent.appendChild(meta);
 
-  appendAdviceList(SharedI18N.pick("身体-情绪线索", "Body–emotion clues"), links.map((item) => `${item.label || item.type || SharedI18N.pick("线索", "Clue")}: ${item.explanation || item.description || ""}`));
-  appendAdviceList(SharedI18N.pick("可尝试步骤", "Steps to try"), advice.steps || [], true);
+  appendAdviceList(adviceText("身体-情绪线索", "Body-emotion links"), links.map((item) => `${item.label || item.type || adviceText("线索", "Clue")}: ${item.explanation || item.description || ""}`));
+  appendAdviceList(adviceText("可尝试步骤", "Steps to try"), advice.steps || [], true);
 
   if (advice.reflection_prompt) {
-    appendAdviceParagraph(SharedI18N.pick("继续记录提示", "Reflection prompt"), advice.reflection_prompt);
+    appendAdviceParagraph(adviceText("继续记录提示", "Reflection prompt"), advice.reflection_prompt);
   }
 
   if (safety.risk_level === "high" && Array.isArray(safety.red_flags) && safety.red_flags.length) {
-    appendAdviceList(SharedI18N.pick("风险提示", "Safety reminders"), safety.red_flags);
+    appendAdviceList(adviceText("风险提示", "Risk warning"), safety.red_flags);
   }
 
-  appendAdviceList(SharedI18N.pick("何时求助", "When to seek help"), advice.when_to_seek_help || []);
-  appendAdviceParagraph(SharedI18N.pick("说明", "Note"), SharedI18N.pick("这些建议不构成医疗诊断；如果症状明显、持续或让你担心，请优先寻求专业帮助。", "This is not a medical diagnosis. Seek professional help for significant, persistent or worrying symptoms."));
+  appendAdviceList(adviceText("何时求助", "When to seek help"), advice.when_to_seek_help || []);
+  appendAdviceParagraph(adviceText("说明", "Note"), adviceText("这些建议不构成医疗诊断；如果症状明显、持续或让你担心，请优先寻求专业帮助。", "These suggestions are not a medical diagnosis. If symptoms are strong, persistent, or worrying, seek professional help first."));
 }
 
 function appendAdviceParagraph(label, text) {
@@ -441,26 +578,51 @@ async function submitAdvice() {
     free_text: els.freeText.value.trim(),
     include_recent_diaries: true,
     recent_diary_limit: 5,
+    ui_language: bodyLang(),
   };
 
   state.submitting = true;
+  const controller = new AbortController();
+  els.submitBtn.setAttribute("aria-busy", "true");
   els.submitBtn.disabled = true;
-  setAdviceState(SharedI18N.pick("生成中", "Generating"));
-  setSubmitStatus(SharedI18N.pick("正在生成建议，可能需要几秒。", "Generating advice. This may take a few seconds."));
+  els.submitBtn.textContent = bodyT("body.generating", bodyText("生成中", "Generating"));
+  setAdviceState(bodyT("body.generating", bodyText("生成中", "Generating")));
+  setSubmitStatus(bodyT("body.generateWait", bodyText("正在生成建议，可能需要几秒。", "Generating advice. This may take a few seconds.")));
+  let timeoutTimer;
+  const deadline = new Promise((_, reject) => {
+    timeoutTimer = setTimeout(() => {
+      reject(new Error(bodyT("body.requestTimeout", bodyText("等待超时，请重试；未产生新的建议。", "The request timed out. Please retry; no new advice was received."))));
+      controller.abort();
+    }, 45000);
+  });
+  const progressTimer = setTimeout(() => {
+    if (state.submitting) setSubmitStatus(bodyT("body.stillGenerating", bodyText("仍在等待模型。若超时，系统会返回一般性提醒。", "Still waiting for the model. General guidance will be returned if it times out.")));
+  }, 8000);
   try {
-    const data = await apiJson("/body-sensation/advice", {
+    const data = await Promise.race([apiJson("/body-sensation/advice", {
       method: "POST",
       body: JSON.stringify(payload),
-    });
+      signal: controller.signal,
+    }), deadline]);
+    if (!data || data.status === "error" || !data.advice?.summary || !Array.isArray(data.advice.steps)) {
+      throw new Error(data?.message || bodyT("body.invalidAdvice", bodyText("服务未返回完整建议，请重试。", "The service did not return complete advice. Please retry.")));
+    }
     renderAdvice(data);
-    setAdviceState(SharedI18N.pick("已生成", "Ready"));
-    setSubmitStatus(SharedI18N.pick(`建议已生成。来源：${data?.advice?.source || "-"}`, `Advice ready. Source: ${data?.advice?.source || "-"}`));
+    const modelResult = String(data.advice.source || "").startsWith("llm");
+    setAdviceState(modelResult ? bodyT("body.generated", bodyText("已生成", "Generated")) : bodyT("body.generalGuidance", bodyText("一般性提醒", "General guidance")));
+    setSubmitStatus(modelResult
+      ? bodyT("body.modelAdviceReady", bodyText("建议已生成；语言跟随本次输入。", "Advice is ready, in the language of your current input."))
+      : bodyT("body.fallbackAdviceReady", bodyText("已返回一般性保底提醒；你可以稍后重新生成。", "General guidance is available. You can try generating again later.")));
   } catch (error) {
-    setAdviceState(SharedI18N.pick("生成失败", "Generation failed"));
-    setSubmitStatus(SharedI18N.pick(`请求失败：${error.message}`, `Request failed: ${error.message}`));
+    setAdviceState(bodyT("body.generateFailed", bodyText("生成失败", "Failed")));
+    setSubmitStatus(bodyFormat("body.requestFailed", bodyText("请求失败：{message}", "Request failed: {message}"), { message: error.message }));
   } finally {
+    clearTimeout(timeoutTimer);
+    clearTimeout(progressTimer);
     state.submitting = false;
+    els.submitBtn.setAttribute("aria-busy", "false");
     els.submitBtn.disabled = false;
+    els.submitBtn.textContent = bodyT("body.generate", bodyText("生成身体感受建议", "Generate Body Advice"));
   }
 }
 

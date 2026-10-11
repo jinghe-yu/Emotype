@@ -1,0 +1,42 @@
+- main [ref=f32e2]:
+  - generic [ref=f32e3]:
+    - link "EmoBridge home" [ref=f32e4] [cursor=pointer]:
+      - /url: /
+      - img "emobridge" [ref=f32e6]
+    - navigation "Primary navigation" [ref=f32e7]:
+      - link "Home" [ref=f32e8] [cursor=pointer]:
+        - /url: /
+      - link "Journal" [ref=f32e9] [cursor=pointer]:
+        - /url: /essay
+      - link "Body Sense" [ref=f32e10] [cursor=pointer]:
+        - /url: /body-sensation
+      - link "Emo Echo" [ref=f32e11] [cursor=pointer]:
+        - /url: /emo-echo
+      - link "History" [ref=f32e12] [cursor=pointer]:
+        - /url: /historyreview
+    - generic [ref=f32e13]:
+      - button "G Guest" [ref=f32e14] [cursor=pointer]:
+        - generic [ref=f32e15]: G
+        - generic [ref=f32e16]: Guest
+      - link "Login" [ref=f32e17] [cursor=pointer]:
+        - /url: /login
+  - generic [ref=f32e18]:
+    - generic [ref=f32e19]:
+      - img "Emo Echo" [ref=f32e20]
+      - generic [ref=f32e21]:
+        - paragraph [ref=f32e22]: AI Companion
+        - heading "Emo Echo" [level=1] [ref=f32e23]
+        - paragraph [ref=f32e24]: Share your thoughts, emotions find their echo
+    - generic [ref=f32e25]:
+      - button "History" [ref=f32e26] [cursor=pointer]
+      - button "New Chat" [ref=f32e27] [cursor=pointer]
+  - generic [ref=f32e28]:
+    - log "Conversation" [ref=f32e29]:
+      - generic [ref=f32e32]:
+        - generic [ref=f32e33]: Hi, I'm Emo Echo. Share what's on your mind—your emotions will find their echo.Is there anything you'd like to tell me?
+        - generic [ref=f32e34]: 02:53
+    - generic [ref=f32e35]:
+      - textbox "Message input" [ref=f32e36]:
+        - /placeholder: Write what's on your mind… (Enter to send, Shift+Enter for new line)
+      - button "Send" [ref=f32e37] [cursor=pointer]
+    - paragraph [ref=f32e41]: Emo Echo is an emotional companion and does not provide psychological diagnosis or medical advice.

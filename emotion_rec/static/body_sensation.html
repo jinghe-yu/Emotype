@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title data-ui-copy="身体感受 | EmoBridge">Body Sense | EmoBridge</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20261010a" />
-  <link rel="stylesheet" href="/static/body_sensation.css?v=20261010a" />
+  <link rel="stylesheet" href="/static/styles.css?v=20261010d" />
+  <link rel="stylesheet" href="/static/body_sensation.css?v=20261011a" />
 </head>
 <body class="body-sensation-page">
 
@@ -116,7 +116,7 @@
           </label>
           <label class="body-text-control" for="bodyDuration">
             <span data-i18n="body.duration">Duration</span>
-            <input id="bodyDuration" type="text" value="" placeholder="e.g., since this afternoon" autocomplete="off" />
+            <input id="bodyDuration" type="text" value="" placeholder="e.g., since this afternoon" data-i18n-placeholder="body.durationPlaceholder" autocomplete="off" />
           </label>
         </div>
         <label class="body-text-control body-free-text" for="bodyFreeText">
@@ -128,7 +128,7 @@
           <button class="warm-btn ghost" type="button" id="bodyClearPairsBtn" data-i18n="body.clearPairs">Clear</button>
           <button class="warm-btn red" type="button" id="bodySubmitBtn" data-i18n="body.generate">Generate Body Advice</button>
         </div>
-        <p class="body-submit-status" id="bodySubmitStatus" data-ui-copy="系统会综合身体感受和最近记录。">System combines body sensations with recent records.</p>
+        <p class="body-submit-status" id="bodySubmitStatus" role="status" aria-live="polite" aria-atomic="true" data-ui-copy="系统会综合身体感受和最近记录。">System combines body sensations with recent records.</p>
       </div>
     </section>
 
@@ -144,13 +144,13 @@
         <div class="body-advice-empty" id="bodyAdviceEmpty">
           <p data-ui-copy="选择至少一个身体感受组合后生成建议。建议会保持温和、非诊断式，并保留必要的就医提醒。">Select at least one body sensation pair to generate advice. Advice remains gentle, non-diagnostic, and includes necessary medical reminders.</p>
         </div>
-        <div class="body-advice-content" id="bodyAdviceContent"></div>
+        <div class="body-advice-content" id="bodyAdviceContent" lang="en"></div>
       </article>
     </aside>
   </section>
 </main>
-<script src="/static/body_sensation.js?v=20261010a" defer></script>
-<script src="/static/i18n.js?v=20261010a"></script>
-<script src="/static/auth.js?v=20261010a"></script>
+<script src="/static/body_sensation.js?v=20261011a" defer></script>
+<script src="/static/i18n.js?v=20261011a"></script>
+<script src="/static/auth.js?v=20261010c"></script>
 </body>
 </html>

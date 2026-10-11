@@ -81,6 +81,9 @@ export ADMIN_TOKEN=your_admin_token_here
 | `LLM_ENABLED` | 默认启用。Render 上应为 `true`，`false` 会跳过真实模型调用。 |
 | `DEEPSEEK_TIMEOUT_SECONDS` | 单次模型调用超时，默认 30 秒；Echo 超时后显示英文保底回复。 |
 | `BODY_ADVICE_LLM_ENABLED` | Body Sense 模型建议开关，默认 `true`。 |
+| `BODY_LLM_TIMEOUT_SECONDS` | Body Sense 单次建议调用超时，默认 25 秒；失败不重试，返回跟随输入语言的一般性提醒。 |
+| `BODY_ADVICE_TIMEOUT_SECONDS` | Body Sense 总处理上限，默认且最多 35 秒；前端等待上限为 45 秒。 |
+| `BODY_LLM_MAX_TOKENS` | Body Sense 默认 1536，范围 512–2048，精简输出以降低生成延迟。 |
 | `DEEPSEEK_BASE_URL` | OpenAI-compatible base URL。 |
 | `LLM_API_KEY` | 旧版 key alias。 |
 | `GEMINI_API_KEY` | Google AI Studio key，用于图片上传的 Gemini VLM 分析，缺失时图片仅上传不分析。 |
@@ -90,6 +93,13 @@ export ADMIN_TOKEN=your_admin_token_here
 | `MODEL_NAME_OR_PATH` | 本地 Wav2Vec2 模型路径。 |
 
 不要把真实 key 写入仓库。生产环境应通过服务管理器、平台 secret 或 shell 环境注入。
+
+Body Sense 的辅助情绪线索使用本地规则，不会因为 `TEXT_EMOTION_BACKEND=deepseek`
+额外调用一次情绪 LLM。只进行一次建议模型请求，并保留非思考模式。
+建议语言优先跟随本次补充描述，其次当前日记、其他手写输入；历史记录和固定按钮标签
+不会覆盖它。没有可判断的文字时使用界面语言，新用户默认英文。
+模型失败、返回语言错误或超过总处理上限时，页面会标明“一般性提醒”，不会把保底内容
+标成模型生成结果。浏览器网络异常时会恢复生成按钮，并允许手动重试。
 
 ## 数据库
 
